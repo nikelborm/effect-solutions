@@ -51,24 +51,22 @@ function extractKeywords(
   return ordered;
 }
 
-export const getDocSearchDocuments = cache(
-  (): DocSearchDocument[] => {
-    const docs = getAllDocs();
+export const getDocSearchDocuments = cache((): DocSearchDocument[] => {
+  const docs = getAllDocs();
 
-    return docs.map((doc, index) => {
-      const summary = createSummary(doc.content);
-      const description = doc.description ?? "";
-      return {
-        slug: doc.slug,
-        title: doc.title,
-        description,
-        summary,
-        priority: doc.order !== undefined ? doc.order : index + 1,
-        keywords: extractKeywords(doc.title, description, summary),
-      };
-    });
-  },
-);
+  return docs.map((doc, index) => {
+    const summary = createSummary(doc.content);
+    const description = doc.description ?? "";
+    return {
+      slug: doc.slug,
+      title: doc.title,
+      description,
+      summary,
+      priority: doc.order !== undefined ? doc.order : index + 1,
+      keywords: extractKeywords(doc.title, description, summary),
+    };
+  });
+});
 
 export function serializeSearchDocuments(
   documents: DocSearchDocument[],

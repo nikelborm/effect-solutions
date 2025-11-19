@@ -104,3 +104,18 @@ export function getDocTitles(): Record<string, string> {
     {} as Record<string, string>,
   );
 }
+
+export function getOrderedDocSlugs(): string[] {
+  return getAllDocs().map((doc) => doc.slug);
+}
+
+export function getNextDocSlug(currentSlug: string): string | null {
+  const slugs = getOrderedDocSlugs();
+  const currentIndex = slugs.indexOf(currentSlug);
+
+  if (currentIndex === -1 || currentIndex === slugs.length - 1) {
+    return null;
+  }
+
+  return slugs[currentIndex + 1] ?? null;
+}

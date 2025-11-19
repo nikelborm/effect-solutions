@@ -67,4 +67,3 @@ if (!fs.existsSync(WATCH_DIR)) {
     },
   );
 }
-

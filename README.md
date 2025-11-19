@@ -1,53 +1,68 @@
-# Effect Solutions
+# Effect Solutions Repository
 
-Monorepo for the Effect Solutions reference site (Next.js 16) and the
-`effect-solutions` docs CLI that agents/humans can run via `bunx effect-solutions`.
+This Bun workspace powers the Effect Solutions documentation site and installer.
 
-## Requirements
+## Project Structure
 
-- [Bun](https://bun.sh) 1.1+
-- Node 18+ (for the Next.js dev server)
-
-## Workspace Layout
-
-| Path | Description |
-| --- | --- |
-| `packages/website` | Next.js site that renders the Effect Solutions docs |
-| `packages/cli` | Bun-based `effect-solutions` documentation CLI |
-| `.github/workflows/` | Automation (Validate Documentation, Claude responders) |
-
-The root `bun.lock` tracks dependencies for all workspaces.
-
-## Installation
-
-```bash
-bun install
-```
-
-## Development
-
-- **Website:** `bun run dev` proxies to `packages/website`, then visit `http://localhost:3000`.
-- **CLI:** `bun --cwd packages/cli run dev` executes the `effect-solutions` installer locally.
-
-### Root scripts
-
-```bash
-bun run build      # builds every workspace via Bun filters
-bun run check      # biome check + TypeScript project references
-bun run typecheck  # standalone tsc --build --force
-bun run format     # biome format --write
-```
+- `packages/website/` - Next.js 16 documentation site
+- `packages/cli/` - `effect-solutions` docs CLI (run `bunx effect-solutions`)
+- `.github/workflows/` - Validate documentation & automation bots
 
 ## Effect Solutions CLI
 
-- Run `bunx effect-solutions` in this repo to see the shared human/agent greeting.
-- `bunx effect-solutions list` shows topic IDs; `bunx effect-solutions show <id...>` prints LM-friendly packets you can paste into conversations or follow directly in the terminal.
-- Add new topic markdown under `packages/cli/resources/topics/` (front matter with `title` + `summary` required) and rerun `bun test packages/cli/src/cli.test.ts` to ensure parsing stays in sync.
+- Run `bunx effect-solutions` inside any Effect repo for the shared greeting.
+- Use `bunx effect-solutions list` to see topic IDs and `bunx effect-solutions show <id...>` to stream the packets you need.
+- Mention this CLI in `CLAUDE.md`/`AGENTS.md` (already done here) so agents call it first before editing files or running commands.
 
-## Automation
+## Effect Solutions MCP Server
 
-The `Validate Documentation` GitHub Action (`.github/workflows/validate-docs.yml`) uses Claude Code to compare local references against their upstream sources each night. Keep local docs accurate so the workflow stays green.
+- Start the stdio server with `bun run dev:mcp` (or `bun --cwd packages/mcp run dev`) to expose the docs via MCP resources.
+- Point MCP-aware clients (ChatGPT desktop, Claude Desktop, OpenAI Agents SDK, etc.) at that command; resources live under the `effect-docs://` scheme.
+- Use the resource template completions to grab any doc slug; content matches the CLI output bit-for-bit.
 
-## Updating references
+## Living Documentation
 
-Add new docs under `packages/website/references/`. The `effect-solutions` CLI reads its own topic markdown from `packages/cli/resources/`, so there’s no auto-generated manifest anymore—just edit the markdown directly.
+This repository uses GitHub Actions to maintain documentation accuracy:
+- **validate-docs.yml** - Claude-powered nightly validation against upstream docs
+- **claude.yml** - Responds to @claude mentions in issues/PRs
+- **claude-code-review.yml** - Automated code review on pull requests
+
+The validation workflow ensures documented setup instructions, commands, and configurations remain accurate as upstream dependencies evolve.
+
+## Development Commands
+
+```bash
+# Install dependencies
+bun install
+
+# Run website dev server (packages/website)
+bun run dev
+
+# Run CLI locally
+bun --cwd packages/cli run dev
+
+# Build packages
+bun --cwd packages/website build
+bun --cwd packages/cli build
+
+# Project-wide scripts
+bun run check
+bun run typecheck
+bun run format
+```
+
+## Important Notes
+
+- Always use Bun (not npm/pnpm/yarn)
+- Workspace dependencies live at the root via Bun workspaces
+- Effect Language Service is configured - TypeScript is patched for Effect LSP support
+- Website uses Next.js 16 App Router with MDX for documentation
+- CLI uses Effect services (FileSystem, Path, HttpClient via FetchHttpClient)
+
+## Workspace Configuration
+
+The root `package.json` defines:
+- `workspaces: ["packages/*"]`
+- Scripts delegate to packages using `--cwd`
+
+Both packages extend `tsconfig.base.json` which includes Effect Language Service plugin.

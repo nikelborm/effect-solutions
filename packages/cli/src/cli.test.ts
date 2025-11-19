@@ -30,8 +30,6 @@ describe("effect-solutions CLI docs", () => {
   });
 
   test("show rejects unknown doc slugs", () => {
-    expect(() => renderDocs(["unknown-doc"])).toThrowError(
-      /Unknown doc slug/,
-    );
+    expect(() => renderDocs(["unknown-doc"])).toThrowError(/Unknown doc slug/);
   });
 });

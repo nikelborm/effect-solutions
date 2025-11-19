@@ -10,9 +10,11 @@
   "scripts": {
     "dev": "bun --cwd packages/website dev",
     "dev:cli": "bun --cwd packages/cli dev",
+    "dev:mcp": "bun --cwd packages/mcp run dev",
     "build": "bun --filter '*' build",
     "build:website": "bun --cwd packages/website build",
     "build:cli": "bun --cwd packages/cli build",
+    "build:mcp": "bun --cwd packages/mcp build",
     "publish:cli": "cd packages/cli && bun publish",
     "publish:cli:dry": "cd packages/cli && bun publish --dry-run",
     "publish:cli:alpha": "cd packages/cli && bun publish --tag alpha",
@@ -28,7 +30,6 @@
     "@radix-ui/react-visually-hidden": "^1.2.4",
     "cmdk": "^1.1.1",
     "effect": "^3.19.4",
-    "next-mdx-remote": "^5.0.0",
-    "vercel": "^48.10.3"
+    "next-mdx-remote": "^5.0.0"
   }
 }

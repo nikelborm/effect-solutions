@@ -2,17 +2,27 @@
 
 import Link from "next/link";
 import { ArrowRight, ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
-import type { AnchorHTMLAttributes } from "react";
+import type { AnchorHTMLAttributes, MouseEventHandler, ReactNode } from "react";
 import { useLessonNavSfx } from "@/lib/useLessonNavSfx";
 import { cn } from "@/lib/cn";
 
 interface MDXLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href?: string;
+  children: ReactNode;
 }
 
-export function MDXLink({ children, className, href, ...props }: MDXLinkProps) {
+export function MDXLink(props: MDXLinkProps) {
+  const {
+    children,
+    className,
+    href,
+    onMouseEnter,
+    onClick,
+    ...anchorProps
+  } = props;
   const { playHoverTone, playTapTone } = useLessonNavSfx();
-  const isInternal = (href?.startsWith("/") && !href.startsWith("//")) || href?.startsWith("./");
+  const isInternal =
+    (href?.startsWith("/") && !href.startsWith("//")) || href?.startsWith("./");
   const isExternal =
     href?.startsWith("http://") || href?.startsWith("https://");
   const iconClassName = "text-blue-400/60 font-bold";
@@ -22,14 +32,23 @@ export function MDXLink({ children, className, href, ...props }: MDXLinkProps) {
     className,
   );
 
+  const handleMouseEnter: MouseEventHandler<HTMLAnchorElement> = (event) => {
+    onMouseEnter?.(event);
+    playHoverTone();
+  };
+
+  const handleClick: MouseEventHandler<HTMLAnchorElement> = (event) => {
+    onClick?.(event);
+    playTapTone();
+  };
+
   if (isInternal && href) {
     return (
       <Link
         href={href}
         className={linkClassName}
-        onMouseEnter={playHoverTone}
-        onClick={playTapTone}
-        {...props}
+        onMouseEnter={handleMouseEnter}
+        onClick={handleClick}
       >
         {children}
         <ArrowRight size={16} weight="bold" className={iconClassName} />
@@ -41,9 +60,10 @@ export function MDXLink({ children, className, href, ...props }: MDXLinkProps) {
     <a
       href={href}
       className={linkClassName}
-      onMouseEnter={playHoverTone}
+      onMouseEnter={handleMouseEnter}
+      onClick={handleClick}
       {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
-      {...props}
+      {...anchorProps}
     >
       {children}
       {isExternal && (

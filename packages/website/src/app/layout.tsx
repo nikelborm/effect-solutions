@@ -11,7 +11,7 @@ import {
   getDocSearchDocuments,
   serializeSearchDocuments,
 } from "@/lib/doc-search";
-import { getDocTitles } from "@/lib/mdx";
+import { getDocTitles, getOrderedDocSlugs } from "@/lib/mdx";
 import { SoundSettingsProvider } from "@/lib/useSoundSettings";
 import "./globals.css";
 
@@ -76,6 +76,7 @@ export default function RootLayout({
 }>) {
   const documents = serializeSearchDocuments(getDocSearchDocuments());
   const docTitles = getDocTitles();
+  const orderedSlugs = getOrderedDocSlugs();
 
   return (
     <html lang="en">
@@ -87,7 +88,7 @@ export default function RootLayout({
         <SoundSettingsProvider>
           <DocHeader docTitles={docTitles} />
           {children}
-          <DocFooter />
+          <DocFooter docTitles={docTitles} orderedSlugs={orderedSlugs} />
         </SoundSettingsProvider>
         <Analytics />
       </body>
