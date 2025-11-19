@@ -6,6 +6,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "dev": "next dev",
+    "dev:content": "bun dev & bun run watch:content",
+    "watch:content": "bun ./scripts/content-watcher.ts",
     "build": "next build",
     "start": "next start",
     "lint": "biome check",

@@ -91,11 +91,46 @@ Enables Effect language service for diagnostics and transforms.
 3. **Modern** - ESM-first, works with Node.js native modules
 4. **DX** - Source maps, declaration maps, Effect diagnostics
 
-## TODO
+## Module Settings by Project Type
 
-- Document different tsconfig settings for:
-  - Libraries (published to npm)
-  - Vite apps (bundled)
-  - Node apps (unbundled)
-- Cover bundler vs non-bundler specific settings
-- `moduleResolution`, `module`, and `target` differences
+The key difference between project types is the `module` setting:
+
+### Bundled Apps (Vite, Webpack, esbuild)
+
+```jsonc
+{
+  "compilerOptions": {
+    "module": "preserve",
+    "noEmit": true
+  }
+}
+```
+
+Use `"module": "preserve"` when a bundler handles module transformation. TypeScript acts as a type-checker only.
+
+### Libraries & Node Apps (Transpiled with tsc)
+
+```jsonc
+{
+  "compilerOptions": {
+    "module": "NodeNext"
+  }
+}
+```
+
+Use `"module": "NodeNext"` when TypeScript transpiles your code. Required for:
+- npm packages (libraries)
+- Node.js apps without a bundler
+
+**Additional library settings:**
+```jsonc
+{
+  "compilerOptions": {
+    "declaration": true,
+    "composite": true,      // monorepos only
+    "declarationMap": true  // monorepos only
+  }
+}
+```
+
+**Rule of thumb:** Bundler compiling? Use `preserve`. TypeScript compiling? Use `NodeNext`.
