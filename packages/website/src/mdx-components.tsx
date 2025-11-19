@@ -7,7 +7,6 @@ import {
 } from "react";
 import { codeToHtml } from "shiki";
 import { AsteriskIcon, Sparkle } from "@phosphor-icons/react/dist/ssr";
-import { CalloutAlignedHtml } from "@/components/mdx/CalloutAlignedHtml";
 import { CodeCopyButton } from "@/components/mdx/CodeCopyButton";
 import { DraftNote } from "@/components/mdx/DraftNote";
 import { FootnoteDefinitions } from "@/components/mdx/FootnoteDefinitions";
@@ -56,9 +55,11 @@ async function CodeBlock({
     return (
       <div className="not-prose group relative my-6 border-y border-neutral-800 bg-neutral-950">
         <CodeCopyButton value={trimmed} />
-        <div className="overflow-x-auto">
-          <CalloutAlignedHtml html={sanitizedHtml} />
-        </div>
+        <div
+          className="overflow-x-auto"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via Shiki and inline styles stripped
+          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+        />
       </div>
     );
   } catch {

@@ -24,15 +24,12 @@ export function FootnoteArticleShell({
   );
 
   return (
-    <main
+    <div
       ref={setArticleRef}
-      className={cn(
-        "mx-auto flex w-full flex-1 flex-col border-x border-neutral-800 max-w-screen-md",
-        className,
-      )}
+      className={cn("mx-auto flex w-full flex-1 flex-col max-w-screen-md", className)}
       {...props}
     >
       {children}
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { codeToHtml } from "shiki";
-import { CalloutAlignedHtml } from "./CalloutAlignedHtml";
 import { VisualEffectRunner } from "./VisualEffectRunner";
 
 export async function VisualEffectDemo() {
@@ -24,7 +23,11 @@ export async function VisualEffectDemo() {
         description="Runs for 1 second then completes"
       />
       <div className="w-full bg-neutral-800 h-px" />
-      <CalloutAlignedHtml html={sanitizedHtml} className="w-full" />
+      <div
+        className="w-full overflow-x-auto"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via Shiki
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      />
     </div>
   );
 }

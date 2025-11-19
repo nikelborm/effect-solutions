@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { codeToHtml } from "shiki";
 import { transformerAnnotations } from "@/lib/shiki-transformer-annotations";
-import { CalloutAlignedHtml } from "./CalloutAlignedHtml";
 import { CodeCopyButton } from "./CodeCopyButton";
 
 interface CodeBlockProps {
@@ -53,9 +52,11 @@ export function CodeBlock({
       className={`group relative not-prose my-6 border-y border-neutral-800 bg-neutral-950 ${className || ""}`}
     >
       <CodeCopyButton value={normalizedCode} />
-      <div className="overflow-x-auto">
-        <CalloutAlignedHtml html={html} />
-      </div>
+      <div
+        className="overflow-x-auto"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via Shiki and stripped styles
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </div>
   );
 }

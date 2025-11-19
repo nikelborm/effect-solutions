@@ -109,10 +109,14 @@ const fetchUser = (id: string) =>
     })
   })
 
-// Downstream you get structured fields for free
+// Downstream use Schema.encodeSync(Schema.Defect) for stable logging / serialization
+const formatDefect = Schema.encodeSync(Schema.Defect)
+
 const program = fetchUser("user-123").pipe(
   Effect.catchTag("ApiError", ({ endpoint, statusCode, cause }) =>
-    Effect.logError(`Request ${endpoint} failed (${statusCode}): ${cause.message ?? cause}`)
+    Effect.logError(`Request ${endpoint} failed (${statusCode})`, {
+      cause: formatDefect(cause),
+    })
   )
 )
 ```

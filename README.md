@@ -1,6 +1,6 @@
 # Effect Solutions Repository
 
-This Bun workspace powers the Effect Solutions documentation site and installer.
+This Bun workspace powers the Effect Solutions documentation site and installer (hosted at https://www.effect.solutions).
 
 ## Project Structure
 
@@ -16,9 +16,30 @@ This Bun workspace powers the Effect Solutions documentation site and installer.
 
 ## Effect Solutions MCP Server
 
-- Start the stdio server with `bun run dev:mcp` (or `bun --cwd packages/mcp run dev`) to expose the docs via MCP resources and tools.
-- Point MCP-aware clients (ChatGPT desktop, Claude Desktop, OpenAI Agents SDK, etc.) at that command; resources live under the `effect-docs://` scheme.
-- Use the resource template completions to grab any doc slug; content matches the CLI output bit-for-bit.
+Launch the shared MCP server anywhere Bun is installed:
+
+```bash
+bunx effect-solutions-mcp
+```
+
+Point MCP-aware clients (Claude Code, Codex CLI, OpenAI Agents SDK, etc.) at that command; resources live under the `effect-docs://` scheme and mirror the CLI output.
+
+### Claude Code MCP CLI
+
+```bash
+claude mcp add effect-solutions -- bunx effect-solutions-mcp
+claude mcp add effect-solutions -- bunx effect-solutions-mcp --scope user
+```
+
+The first command scopes to the current workspace; add `--scope user` for a global install.
+
+### Codex CLI Setup
+
+```bash
+codex mcp add effect-solutions -- bunx effect-solutions-mcp
+```
+
+Codex stores MCP entries globally in `~/.codex/config.toml`. Re-run with `--scope local` (or edit the config file) for per-project overrides. Use `/mcp run effect-solutions <resource>` inside Codex to fetch docs on demand.
 
 ### Available Tools
 
@@ -57,6 +78,9 @@ bun --cwd packages/cli build
 bun run check
 bun run typecheck
 bun run format
+
+# Start MCP server from repo (for local edits)
+bun run dev:mcp
 ```
 
 ## Important Notes

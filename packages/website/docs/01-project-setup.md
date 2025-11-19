@@ -89,7 +89,7 @@ claude mcp add effect-solutions -- bunx effect-solutions-mcp --scope user
 codex mcp add effect-solutions -- bunx effect-solutions-mcp
 ```
 
-Claude stores workspace entries alongside your repo config (use `--scope user` for global availability). Codex writes MCP entries to `~/.codex/config.toml`; edit that file or rerun the command with `--scope local` if you want per-project overrides.
+Claude stores workspace entries per repo unless you pass `--scope user`; Codex writes to `~/.codex/config.toml` (re-run with `--scope local` for per-project overrides).
 
 ## LLM Context Directory
 
