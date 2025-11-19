@@ -8,9 +8,30 @@ import pkg from "../package.json" with { type: "json" };
 
 const SERVER_NAME = "effect-solutions";
 const SERVER_VERSION = pkg.version;
-const DOC_URI_PREFIX = "effect-docs://";
-
 const docCompletionValues = DOCS.map((doc) => doc.slug);
+
+const openInBrowser = (url: string) => {
+  const platform = process.platform;
+  let command: string[] | null = null;
+
+  if (platform === "darwin") {
+    command = ["open", url];
+  } else if (platform === "win32") {
+    command = ["cmd", "/c", "start", "", url];
+  } else {
+    command = ["xdg-open", url];
+  }
+
+  try {
+    const child = Bun.spawn(command, {
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    void child.exited;
+  } catch {
+    // Ignore failures—URL is still returned to the caller.
+  }
+};
 
 const lookupDocMarkdown = (slug: string) =>
   Effect.try(() => {
@@ -117,6 +138,10 @@ const GetHelpTool = Tool.make("get_help", {
 const searchDocs = ({ query }: { query: string }) =>
   Effect.sync(() => {
     const normalizedQuery = query.toLowerCase().trim();
+    if (!normalizedQuery) {
+      return { results: [] };
+    }
+
     const terms = normalizedQuery.split(/\s+/);
 
     // Score each doc based on query match
@@ -179,9 +204,11 @@ const openIssue = ({ category, title, description }: { category: "Topic Request"
       body,
     }).toString()}`;
 
+    openInBrowser(issueUrl);
+
     return {
       issueUrl,
-      message: `GitHub issue URL created: ${issueUrl}`,
+      message: `Opened GitHub issue in browser: ${issueUrl}`,
     };
   });
 

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { normalizeDocSlug } from "./normalizeDocSlug";
 
 const docsDirectory = path.join(process.cwd(), "docs");
 
@@ -16,73 +17,117 @@ export interface Doc extends DocMetadata {
   content: string;
 }
 
-export function getAllDocSlugs(): string[] {
+export { normalizeDocSlug };
+
+interface DocFileEntry {
+  fileName: string;
+  baseName: string;
+  slug: string;
+  fullPath: string;
+}
+
+function getDocFileEntries(): DocFileEntry[] {
   if (!fs.existsSync(docsDirectory)) {
     return [];
   }
 
-  const fileNames = fs.readdirSync(docsDirectory);
-  return fileNames
+  return fs
+    .readdirSync(docsDirectory)
     .filter((name) => name.endsWith(".md") || name.endsWith(".mdx"))
-    .map((name) => name.replace(/\.(md|mdx)$/, ""));
+    .map((fileName) => {
+      const baseName = fileName.replace(/\.(mdx?|md)$/, "");
+      return {
+        fileName,
+        baseName,
+        slug: normalizeDocSlug(baseName),
+        fullPath: path.join(docsDirectory, fileName),
+      } satisfies DocFileEntry;
+    });
 }
 
 function stripFirstH1(content: string): string {
-  // Remove the first H1 (# heading) from the content
   return content.replace(/^#\s+.+$/m, "").trim();
 }
 
-function processInternalLinks(content: string): string {
-  // Convert markdown links that reference other docs to proper paths
-  // Matches [text](filename) or [text](filename.md) and converts to [text](/filename)
-  return content.replace(
-    /\[([^\]]+)\]\((?!https?:\/\/|\/|#)([^)]+?)(\.mdx?)?(\))/g,
-    (_match, text, filename) => {
-      // Remove any .md or .mdx extension and add / prefix
-      const cleanFilename = filename.replace(/\.(mdx?|md)$/, "");
-      return `[${text}](/${cleanFilename})`;
-    },
-  );
+function normalizeDocLinkTarget(target: string): string {
+  const sanitized = target
+    .replace(/^\.\/+/, "")
+    .replace(/^\/+/, "")
+    .replace(/\.(mdx?|md)$/, "");
+  return normalizeDocSlug(sanitized);
 }
 
-export function getDocBySlug(slug: string): Doc | null {
+function processInternalLinks(content: string): string {
+  const relativeDocLink =
+    /\[([^\]]+)\]\((?!https?:\/\/|\/|#)([^)#?]+?)(#[^)]+)?\)/g;
+  const prefixedAbsoluteLink =
+    /\[([^\]]+)\]\(\/((?:\d+-)[^)#?]+?)(?:\.(?:mdx?|md))?(#[^)]+)?\)/g;
+
+  return content
+    .replace(
+      relativeDocLink,
+      (_match, text, target: string, hash: string | undefined) => {
+        const slug = normalizeDocLinkTarget(target);
+        return `[${text}](/${slug}${hash ?? ""})`;
+      },
+    )
+    .replace(
+      prefixedAbsoluteLink,
+      (_match, text, target: string, hash: string | undefined) => {
+        const slug = normalizeDocLinkTarget(target);
+        return `[${text}](/${slug}${hash ?? ""})`;
+      },
+    );
+}
+
+function parseDocEntry(entry: DocFileEntry): Doc | null {
   try {
-    let fullPath = path.join(docsDirectory, `${slug}.md`);
-    if (!fs.existsSync(fullPath)) {
-      fullPath = path.join(docsDirectory, `${slug}.mdx`);
-    }
-
-    const fileContents = fs.readFileSync(fullPath, "utf8");
+    const fileContents = fs.readFileSync(entry.fullPath, "utf8");
     const { data, content } = matter(fileContents);
-
-    // Process the content: strip first H1 and fix internal links
     const processedContent = processInternalLinks(stripFirstH1(content));
 
     return {
-      slug,
-      title: data.title || slug,
+      slug: entry.slug,
+      title: data.title || entry.slug,
       description: data.description,
       order: data.order,
       draft: data.draft,
       content: processedContent,
-    };
-  } catch (_error) {
+    } satisfies Doc;
+  } catch {
     return null;
   }
 }
 
-export function getAllDocs(): Doc[] {
-  const slugs = getAllDocSlugs();
+function findDocEntry(slug: string): DocFileEntry | undefined {
+  const normalized = normalizeDocSlug(slug);
+  const entries = getDocFileEntries();
+  return (
+    entries.find((entry) => entry.slug === normalized) ??
+    entries.find((entry) => entry.baseName === slug)
+  );
+}
 
-  const docs = slugs
-    .map((slug) => getDocBySlug(slug))
+export function getAllDocSlugs(): string[] {
+  return getDocFileEntries().map((entry) => entry.slug);
+}
+
+export function getDocBySlug(slug: string): Doc | null {
+  const entry = findDocEntry(slug);
+  if (!entry) {
+    return null;
+  }
+  return parseDocEntry(entry);
+}
+
+export function getAllDocs(): Doc[] {
+  const docs = getDocFileEntries()
+    .map((entry) => parseDocEntry(entry))
     .filter((doc): doc is Doc => doc !== null)
     .filter((doc) => {
-      // In production, hide drafts
       if (process.env.NODE_ENV === "production") {
         return !doc.draft;
       }
-      // In development, show all
       return true;
     });
 

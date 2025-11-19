@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { KIT_TWITTER_URL } from "@/constants/urls";
 import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
+import { normalizeDocSlug } from "@/lib/normalizeDocSlug";
 
 interface DocFooterProps {
   docTitles: Record<string, string>;
@@ -58,7 +59,8 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
     );
   }
 
-  const currentIndex = orderedSlugs.indexOf(currentSlug);
+  const normalizedSlug = normalizeDocSlug(currentSlug);
+  const currentIndex = orderedSlugs.indexOf(normalizedSlug);
   const prevSlug =
     currentIndex !== -1 && currentIndex > 0
       ? orderedSlugs[currentIndex - 1]
@@ -105,7 +107,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
             onMouseEnter={playHoverSfx}
             onClick={playClickSfx}
           >
-            <span className="select-none!">{nextTitle}</span>
+              <span className="!select-none">{nextTitle}</span>
             <ArrowRightIcon aria-hidden="true" className="h-5 w-5" />
           </Link>
         ) : (

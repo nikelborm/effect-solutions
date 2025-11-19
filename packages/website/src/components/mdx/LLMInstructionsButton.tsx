@@ -4,7 +4,9 @@ import { useState, type MouseEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Copy } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
+import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 import { useTonePlayer } from "@/lib/useTonePlayer";
+import { CTA_BUTTON_BASE_CLASSES } from "./ctaButtonClass";
 
 const LLM_INSTRUCTIONS = `# Effect Solutions - AI Assistant Instructions
 
@@ -49,10 +51,13 @@ When answering Effect questions, prefer fetching the relevant documentation rath
 export function LLMInstructionsButton() {
   const [copied, setCopied] = useState(false);
   const { playTone } = useTonePlayer();
+  const { handleHover, handleClick, handleFocusVisible } =
+    useLessonSfxHandlers();
 
   async function handleCopy(event?: MouseEvent<HTMLButtonElement>) {
     event?.preventDefault();
     event?.stopPropagation();
+    handleClick();
 
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -81,11 +86,13 @@ export function LLMInstructionsButton() {
       layout
       type="button"
       className={cn(
-        "relative flex items-center gap-2 border border-neutral-700/80 bg-neutral-900/50 px-4 py-2.5 text-sm font-medium text-neutral-300 hover:text-white hover:border-neutral-500 hover:bg-neutral-800/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 overflow-hidden",
+        CTA_BUTTON_BASE_CLASSES,
         copied && "text-emerald-300 border-emerald-400/70 bg-emerald-950/30",
       )}
       aria-label="Copy LLM instructions"
       onClick={handleCopy}
+      onMouseEnter={handleHover}
+      onFocus={handleFocusVisible}
     >
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span

@@ -5,7 +5,15 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, Copy } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { useTonePlayer } from "@/lib/useTonePlayer";
-import { springs } from "@/lib/animations";
+
+const copyButtonSpring = {
+  type: "spring" as const,
+  stiffness: 180,
+  damping: 25,
+  mass: 0.8,
+  visualDuration: 0.6,
+  bounce: 0.3,
+};
 
 interface CodeCopyButtonProps {
   value: string;
@@ -94,7 +102,7 @@ export function CodeCopyButton({ value, className }: CodeCopyButtonProps) {
       }}
       transition={{
         opacity: { duration: 0 },
-        layout: springs.nodeWidth,
+        layout: copyButtonSpring,
       }}
       style={{ pointerEvents: isVisible ? "auto" : "none" }}
     >

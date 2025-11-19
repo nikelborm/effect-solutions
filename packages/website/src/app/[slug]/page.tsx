@@ -7,7 +7,11 @@ import { FootnoteArticleShell } from "@/components/mdx/FootnoteArticleShell";
 import { dimensions } from "@/constants/dimensions";
 import { SITE_DEPLOYMENT_URL } from "@/constants/urls";
 import { FootnoteProvider } from "@/lib/footnote-context";
-import { getAllDocSlugs, getDocBySlug } from "@/lib/mdx";
+import {
+  getAllDocSlugs,
+  getDocBySlug,
+  normalizeDocSlug,
+} from "@/lib/mdx";
 import { useMDXComponents } from "@/mdx-components";
 
 interface DocPageProps {
@@ -23,7 +27,7 @@ export async function generateMetadata({
   params,
 }: DocPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const doc = getDocBySlug(slug);
+  const doc = getDocBySlug(normalizeDocSlug(slug));
 
   if (!doc) {
     return {
@@ -56,7 +60,7 @@ export async function generateMetadata({
 
 export default async function DocPage({ params }: DocPageProps) {
   const { slug } = await params;
-  const doc = getDocBySlug(slug);
+  const doc = getDocBySlug(normalizeDocSlug(slug));
 
   if (!doc) {
     notFound();

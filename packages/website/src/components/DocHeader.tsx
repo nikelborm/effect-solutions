@@ -2,19 +2,17 @@
 
 import {
   ArrowLeftIcon,
-  BookOpenIcon,
   BriefcaseIcon,
-  BriefcaseMetalIcon,
   GithubLogo,
   SpeakerSimpleHighIcon,
   SpeakerSimpleSlashIcon,
-  SuitcaseIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type FocusEvent, useCallback, useState } from "react";
 import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
+import { normalizeDocSlug } from "@/lib/normalizeDocSlug";
 import { useSoundSettings } from "@/lib/useSoundSettings";
 import { NavTitleCycler } from "./NavTitleCycler";
 
@@ -105,8 +103,8 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
 
   // Check if we're on a specific doc page
   if (pathname !== "/" && !pathname.startsWith("/_")) {
-    const slug = pathname.slice(1); // Remove leading slash
-    const docTitle = docTitles[slug];
+    const slug = pathname.slice(1);
+    const docTitle = docTitles[normalizeDocSlug(slug)];
     if (docTitle) {
       displayTitle = docTitle;
     }

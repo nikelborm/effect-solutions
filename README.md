@@ -83,6 +83,11 @@ bun run format
 bun run dev:mcp
 ```
 
+### Cursor MCP Button
+
+- `packages/website/src/components/mdx/CursorInstallButton.tsx` renders the one-click `cursor://` deeplink used on the docs overview page.
+- Keep the button’s zero-radius styling and reuse its tone cues if you add similar CTAs elsewhere so it matches the `LLMInstructionsButton` motif.
+
 ## Changesets & Publishing
 
 After completing a discrete unit of work (bug fix, feature, docs update), create a changeset:
@@ -120,3 +125,8 @@ The root `package.json` defines:
 - Scripts delegate to packages using `--cwd`
 
 Both packages extend `tsconfig.base.json` which includes Effect Language Service plugin.
+
+## Design Notes
+
+- UI components use hard edges—no border radius—so prefer `rounded-none` (or omit rounding) when adding new buttons or panels.
+- Call-to-action buttons share the same neutral palette and subtle tone feedback as `LLMInstructionsButton` / `CursorInstallButton`; copy that pattern to keep interactions consistent.
