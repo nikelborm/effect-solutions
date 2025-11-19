@@ -1,0 +1,29 @@
+{
+  "name": "effect-best-practices",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --cwd packages/website dev",
+    "build": "bun --filter '*' build",
+    "build:website": "bun --cwd packages/website build",
+    "build:cli": "bun --cwd packages/cli build",
+    "lint": "biome check .",
+    "format": "biome format . --write",
+    "validate-docs": "typescript-docs-verifier --input-files packages/website/references/*.md --project tsconfig.docs.json"
+  },
+  "devDependencies": {
+    "typescript-docs-verifier": "^3.0.1"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.93.3",
+    "@next/mdx": "^16.0.3",
+    "effect": "^3.19.4",
+    "next-mdx-remote": "^5.0.0",
+    "vercel": "^48.10.3"
+  }
+}

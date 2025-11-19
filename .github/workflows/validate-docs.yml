@@ -1,0 +1,46 @@
+name: Validate Documentation
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Claude validation
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            TASK: Validate documentation files against their source repositories
+
+            INSTRUCTIONS:
+            1. Read packages/doc-validator/src/validators.config.ts
+            2. For EACH validationTarget in the config array:
+               a. Read the local doc at {localDocPath}
+               b. Fetch source from https://raw.githubusercontent.com/{sourceRepo}/main/{sourcePath}
+               c. Compare local vs source and identify discrepancies
+            3. If ANY discrepancies found, create ONE GitHub issue with ALL findings using `gh issue create`
+
+            COMPARISON CRITERIA:
+            - Setup/installation instructions changed or outdated
+            - CLI commands, flags, or paths differ
+            - Missing new features or best practices from source
+            - Version requirements changed
+
+            ISSUE FORMAT (if discrepancies found):
+            Title: "Documentation Drift Detected - [date]"
+            Body: Markdown with sections per validation target, listing specific discrepancies with severity (high/medium/low)
+            Labels: documentation,automated
+
+            If everything is up-to-date, just output "✓ All documentation validated - no issues found"
