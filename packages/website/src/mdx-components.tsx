@@ -11,6 +11,7 @@ import { CodeCopyButton } from "@/components/mdx/CodeCopyButton";
 import { DraftNote } from "@/components/mdx/DraftNote";
 import { FootnoteDefinitions } from "@/components/mdx/FootnoteDefinitions";
 import { FootnoteReference } from "@/components/mdx/FootnoteReference";
+import { LLMInstructionsButton } from "@/components/mdx/LLMInstructionsButton";
 import { MarginAside } from "@/components/mdx/MarginAside";
 import { MDXLink } from "@/components/mdx/MDXLink";
 import { cn } from "@/lib/cn";
@@ -164,6 +165,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     a: MDXLink,
     MarginAside,
     DraftNote,
+    LLMInstructionsButton,
     code: CodeBlock,
     pre: ({ children }) => (
       <div className="not-prose text-red-500">{children}</div>

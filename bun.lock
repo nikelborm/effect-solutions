@@ -19,7 +19,7 @@
     },
     "packages/cli": {
       "name": "effect-solutions",
-      "version": "0.2.0",
+      "version": "0.2.4",
       "bin": {
         "effect-solutions": "./dist/effect-solutions",
       },
@@ -40,7 +40,7 @@
     },
     "packages/mcp": {
       "name": "effect-solutions-mcp",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "bin": {
         "effect-solutions-mcp": "./dist/effect-solutions-mcp",
       },

@@ -83,6 +83,28 @@ bun run format
 bun run dev:mcp
 ```
 
+## Changesets & Publishing
+
+After completing a discrete unit of work (bug fix, feature, docs update), create a changeset:
+
+```bash
+# Create a changeset - follow prompts to select packages and change type
+bunx changeset
+
+# Publish packages (runs changeset version + publishes to npm)
+bun release
+```
+
+**When to create changesets:**
+- After any discrete unit of work is complete
+- Before merging PRs that affect published packages
+- Can create multiple changesets in one PR for different changes
+
+**Change types:**
+- `patch` - Bug fixes, docs updates, minor tweaks
+- `minor` - New features, backwards-compatible changes
+- `major` - Breaking changes
+
 ## Important Notes
 
 - Always use Bun (not npm/pnpm/yarn)

@@ -10,6 +10,10 @@ Effect Solutions is a comprehensive guide for humans and AI agents to understand
 
 Whether you're starting a new Effect project or integrating Effect into an existing codebase, these guides provide battle-tested patterns and configurations that align with Effect's philosophy.
 
+<div className="flex justify-center my-8">
+  <LLMInstructionsButton />
+</div>
+
 ## MCP Access
 
 ### Claude Code MCP CLI

@@ -2,8 +2,7 @@
 
 import { DOC_LOOKUP, DOCS } from "../../cli/src/docs-manifest";
 import { McpSchema, McpServer, Tool, Toolkit } from "@effect/ai";
-import { BunRuntime, BunSink, BunStream, BunContext } from "@effect/platform-bun";
-import { Command } from "@effect/platform";
+import { BunRuntime, BunSink, BunStream } from "@effect/platform-bun";
 import { Effect, Layer, Schema } from "effect";
 import pkg from "../package.json" with { type: "json" };
 
@@ -104,6 +103,17 @@ const OpenIssueTool = Tool.make("open_issue", {
   }),
 });
 
+// Help/Getting Started tool
+const GetHelpTool = Tool.make("get_help", {
+  description: "Get comprehensive help on using Effect Solutions MCP server, reading documentation, and setting up Effect repositories. Returns usage guide, best practices, and quick start instructions.",
+  parameters: {},
+  success: Schema.Struct({
+    guide: Schema.String.annotations({
+      description: "Complete usage guide in markdown format",
+    }),
+  }),
+});
+
 const searchDocs = ({ query }: { query: string }) =>
   Effect.sync(() => {
     const normalizedQuery = query.toLowerCase().trim();
@@ -159,7 +169,7 @@ const searchDocs = ({ query }: { query: string }) =>
   });
 
 const openIssue = ({ category, title, description }: { category: "Topic Request" | "Fix" | "Improvement"; title: string; description: string }) =>
-  Effect.gen(function* () {
+  Effect.sync(() => {
     const repoUrl = "https://github.com/kitlangton/effect-solutions";
     const fullTitle = `[${category}] ${title}`;
     const body = `## Description\n\n${description}\n\n---\n*Created via [Effect Solutions MCP](${repoUrl})*`;
@@ -169,23 +179,192 @@ const openIssue = ({ category, title, description }: { category: "Topic Request"
       body,
     }).toString()}`;
 
-    // Open the URL in the default browser
-    yield* Command.make("open", issueUrl).pipe(
-      Command.exitCode,
-      Effect.catchAll(() => Effect.void)
-    );
-
     return {
       issueUrl,
-      message: `Opened GitHub issue in browser: ${issueUrl}`,
+      message: `GitHub issue URL created: ${issueUrl}`,
     };
   });
 
-const toolkit = Toolkit.make(SearchTool, OpenIssueTool);
+const getHelp = () =>
+  Effect.succeed({
+    guide: `# Effect Solutions MCP Server Guide
+
+## Overview
+
+Effect Solutions MCP provides tools and resources for accessing curated Effect TypeScript documentation and best practices. Use this before editing code or running commands in Effect projects.
+
+## Available Tools
+
+### 1. get_help (current tool)
+Get this help guide explaining MCP usage, doc reading workflow, and repo setup.
+
+### 2. search_effect_solutions
+Search all documentation by query string with relevance scoring.
+
+**Usage:**
+\`\`\`typescript
+search_effect_solutions({ query: "error handling" })
+search_effect_solutions({ query: "services" })
+search_effect_solutions({ query: "dependency injection" })
+\`\`\`
+
+**Returns:** Array of matching docs with:
+- slug (unique doc identifier)
+- title
+- description
+- excerpt (text snippet containing query)
+- score (relevance ranking)
+
+### 3. open_issue
+Request new docs, report errors, or suggest improvements.
+
+**Usage:**
+\`\`\`typescript
+open_issue({
+  category: "Topic Request", // or "Fix" or "Improvement"
+  title: "How to handle retries",
+  description: "I need guidance on retry strategies..."
+})
+\`\`\`
+
+Returns pre-filled GitHub issue URL ready to open.
+
+## Available Resources
+
+### effect-docs://docs/topics
+Complete index of all documentation topics with slugs, titles, and descriptions.
+
+### effect-docs://docs/{slug}
+Fetch specific documentation by slug (e.g., \`effect-docs://docs/error-handling\`).
+
+Available slugs include:
+${DOCS.slice(0, 10).map(d => `- ${d.slug}`).join('\n')}
+...and ${DOCS.length - 10} more (see effect-docs://docs/topics for full list)
+
+## Recommended Workflow
+
+### When Starting Any Effect Task:
+
+1. **Search First** - Before editing code:
+   \`\`\`typescript
+   search_effect_solutions({ query: "<your topic>" })
+   \`\`\`
+
+2. **Read Relevant Docs** - Fetch specific topics:
+   \`\`\`
+   Read: effect-docs://docs/<slug>
+   \`\`\`
+
+3. **Apply Patterns** - Use documented patterns in your code
+
+4. **Request Help** - If docs don't cover your need:
+   \`\`\`typescript
+   open_issue({
+     category: "Topic Request",
+     title: "Brief question",
+     description: "What I'm trying to do..."
+   })
+   \`\`\`
+
+### Example Workflow:
+
+**Task:** "Add error handling to user service"
+
+1. Search: \`search_effect_solutions({ query: "error handling services" })\`
+2. Read returned slugs: \`effect-docs://docs/error-handling\`, \`effect-docs://docs/services\`
+3. Apply patterns from docs
+4. If blocked: \`open_issue({ category: "Topic Request", ... })\`
+
+## Effect Repository Setup
+
+### Prerequisites
+- Bun installed
+- Effect TypeScript project
+
+### Recommended Setup Steps:
+
+1. **Install Effect Language Service** (for IDE support):
+   \`\`\`bash
+   bun add -D effect-language-service
+   bunx effect-language-service patch
+   \`\`\`
+
+2. **Add to CLAUDE.md or AGENTS.md**:
+   \`\`\`markdown
+   # Effect Solutions
+
+   Before editing Effect code, run:
+   \`\`\`bash
+   bunx effect-solutions@latest list  # see all topics
+   bunx effect-solutions@latest show <id...>  # read specific docs
+   \`\`\`
+
+   Or use the Effect Solutions MCP server for tool/resource access.
+   \`\`\`
+
+3. **Configure TypeScript** (if not using language service):
+   Ensure \`strict: true\` and Effect-compatible settings in tsconfig.json
+
+4. **Use Effect Solutions CLI** before major changes:
+   \`\`\`bash
+   bunx effect-solutions@latest show error-handling services
+   \`\`\`
+
+## Best Practices
+
+### DO:
+- ✅ Search documentation BEFORE writing code
+- ✅ Read multiple related topics for context
+- ✅ Follow documented patterns exactly
+- ✅ Request new topics when gaps found
+- ✅ Reference specific doc slugs in code comments
+
+### DON'T:
+- ❌ Skip documentation lookup
+- ❌ Mix patterns from different docs without understanding
+- ❌ Assume standard TypeScript patterns work in Effect
+- ❌ Ignore Effect-specific error handling
+- ❌ Forget to patch TypeScript with effect-language-service
+
+## Common Topics to Search
+
+- "error handling" - Effect.try, Either, Option patterns
+- "services" - Layer, Context, dependency injection
+- "concurrency" - Fiber, Queue, Deferred
+- "testing" - Effect.gen test patterns, Layer testing
+- "schema" - Schema validation, encoding, decoding
+- "http" - HttpClient, HttpServer patterns
+- "configuration" - Config, Layer composition
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| List all topics | \`effect-docs://docs/topics\` resource |
+| Search docs | \`search_effect_solutions({ query: "..." })\` |
+| Read topic | \`effect-docs://docs/{slug}\` resource |
+| Request new docs | \`open_issue({ category: "Topic Request", ... })\` |
+| Report error | \`open_issue({ category: "Fix", ... })\` |
+| Suggest improvement | \`open_issue({ category: "Improvement", ... })\` |
+
+## Support
+
+- Website: https://www.effect.solutions
+- Repository: https://github.com/kitlangton/effect-solutions
+- Use \`open_issue\` tool to request help
+
+---
+
+**Remember:** Always search Effect Solutions documentation before editing Effect code. Following documented patterns prevents common mistakes and ensures idiomatic Effect usage.
+`,
+  });
+
+const toolkit = Toolkit.make(SearchTool, OpenIssueTool, GetHelpTool);
 
 const toolkitLayer = toolkit.toLayer({
   search_effect_solutions: searchDocs,
   open_issue: openIssue,
+  get_help: getHelp,
 });
 
 const serverLayer = Layer.mergeAll(
@@ -202,7 +381,6 @@ const serverLayer = Layer.mergeAll(
       stdout: BunSink.stdout,
     }),
   ),
-  Layer.provide(BunContext.layer),
 );
 
 Layer.launch(serverLayer).pipe(BunRuntime.runMain);
