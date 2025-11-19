@@ -108,6 +108,13 @@ const fetchUser = (id: string) =>
       cause: error // Unknown error from fetch wrapped in Schema.Defect
     })
   })
+
+// Downstream you get structured fields for free
+const program = fetchUser("user-123").pipe(
+  Effect.catchTag("ApiError", ({ endpoint, statusCode, cause }) =>
+    Effect.logError(`Request ${endpoint} failed (${statusCode}): ${cause.message ?? cause}`)
+  )
+)
 ```
 
 **Schema.Defect handles:**

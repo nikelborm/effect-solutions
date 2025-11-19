@@ -172,19 +172,19 @@ function sendEmail(to: Email) { return to }
 Use the same schema to validate unknown input and produce wire-safe JSON payloads:
 
 ```typescript
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
-// Reuse the `User` schema/class defined in the sections above
-const decodeUser = Schema.decodeUnknownSync(User)
-const encodeUser = Schema.encodeSync(User)
+const decodeUser = Schema.decodeUnknownEffect(User)
+const encodeUser = Schema.encodeEffect(User)
 
-// Parsing untyped input
-const raw = JSON.parse('{"id":"user-1","name":"Lina","email":"lina@example.com"}')
-const user = decodeUser(raw) // throws ConfigError on invalid payload
+const program = Effect.gen(function* () {
+  const raw = JSON.parse('{"id":"user-1","name":"Lina","email":"lina@example.com"}')
+  const user = yield* decodeUser(raw) // fails with ConfigError on invalid payload
 
-// Serializing to JSON (e.g., storing or sending to another service)
-const jsonReady = encodeUser(user) // typed as typeof User.Encoded
-const json = JSON.stringify(jsonReady)
+  const jsonReady = yield* encodeUser(user) // typed as typeof User.Encoded
+  const json = JSON.stringify(jsonReady)
+  return json
+})
 ```
 
 Having a single source of truth means every boundary (HTTP handlers, CLI arguments, file IO) can reuse the same schema for both validation and serialization.
