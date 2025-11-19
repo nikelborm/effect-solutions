@@ -4,11 +4,14 @@ import { Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CommandPalette } from "@/components/CommandPalette";
+import { DocFooter } from "@/components/DocFooter";
+import { DocHeader } from "@/components/DocHeader";
 import { SITE_URL } from "@/constants/urls";
 import {
   getDocSearchDocuments,
   serializeSearchDocuments,
 } from "@/lib/doc-search";
+import { getDocTitles } from "@/lib/mdx";
 import { SoundSettingsProvider } from "@/lib/useSoundSettings";
 import "./globals.css";
 
@@ -72,15 +75,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const documents = serializeSearchDocuments(getDocSearchDocuments());
+  const docTitles = getDocTitles();
 
   return (
     <html lang="en">
       <body
-        className={`${commitMono.variable} ${geistMono.variable} antialiased`}
+        className={`${commitMono.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <CommandPalette documents={documents} />
         <AutoRefresh />
-        <SoundSettingsProvider>{children}</SoundSettingsProvider>
+        <SoundSettingsProvider>
+          <DocHeader docTitles={docTitles} />
+          {children}
+          <DocFooter />
+        </SoundSettingsProvider>
         <Analytics />
       </body>
     </html>

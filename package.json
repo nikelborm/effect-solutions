@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "bun --cwd packages/website dev",
+    "dev:cli": "bun --cwd packages/cli dev",
     "build": "bun --filter '*' build",
     "build:website": "bun --cwd packages/website build",
     "build:cli": "bun --cwd packages/cli build",
@@ -23,6 +24,8 @@
   "dependencies": {
     "@effect/platform": "^0.93.3",
     "@next/mdx": "^16.0.3",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-visually-hidden": "^1.2.4",
     "cmdk": "^1.1.1",
     "effect": "^3.19.4",
     "next-mdx-remote": "^5.0.0",

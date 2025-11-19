@@ -93,3 +93,14 @@ export function getAllDocs(): Doc[] {
     return a.title.localeCompare(b.title);
   });
 }
+
+export function getDocTitles(): Record<string, string> {
+  const docs = getAllDocs();
+  return docs.reduce(
+    (acc, doc) => {
+      acc[doc.slug] = doc.title;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+}
