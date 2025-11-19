@@ -81,7 +81,7 @@ export function LLMInstructionsButton() {
       layout
       type="button"
       className={cn(
-        "flex items-center gap-2 border border-neutral-700/80 bg-neutral-900/50 px-4 py-2.5 text-sm font-medium text-neutral-300 hover:text-white hover:border-neutral-500 hover:bg-neutral-800/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500",
+        "relative flex items-center gap-2 border border-neutral-700/80 bg-neutral-900/50 px-4 py-2.5 text-sm font-medium text-neutral-300 hover:text-white hover:border-neutral-500 hover:bg-neutral-800/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 overflow-hidden",
         copied && "text-emerald-300 border-emerald-400/70 bg-emerald-950/30",
       )}
       aria-label="Copy LLM instructions"
@@ -94,7 +94,7 @@ export function LLMInstructionsButton() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
           transition={{ duration: 0.16, ease: "easeOut" }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 whitespace-nowrap"
         >
           {copied ? (
             <Check size={16} weight="bold" />

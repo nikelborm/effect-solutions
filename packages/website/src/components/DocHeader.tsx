@@ -5,6 +5,7 @@ import {
   BookOpenIcon,
   BriefcaseIcon,
   BriefcaseMetalIcon,
+  GithubLogo,
   SpeakerSimpleHighIcon,
   SpeakerSimpleSlashIcon,
   SuitcaseIcon,
@@ -167,6 +168,16 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
             </div>
           </div>
         </Link>
+        <a
+          href="https://github.com/kitlangton/effect-solutions"
+          target="_blank"
+          rel="noopener noreferrer"
+          onMouseEnter={handleMuteButtonHover}
+          className="flex items-center justify-center h-16 w-16 py-6 border-l border-neutral-800 hover:bg-neutral-900/50"
+          aria-label="View on GitHub"
+        >
+          <GithubLogo className="h-4 w-4" weight="regular" />
+        </a>
         <button
           type="button"
           onClick={toggleMute}

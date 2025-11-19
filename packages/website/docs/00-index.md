@@ -8,7 +8,9 @@ order: 0
 
 Effect Solutions is a comprehensive guide for humans and AI agents to understand best practices and patterns when building applications with the Effect library. This resource covers everything from initial project setup through advanced patterns for dependency injection, error handling, and data modeling.
 
-Whether you're starting a new Effect project or integrating Effect into an existing codebase, these guides provide battle-tested patterns and configurations that align with Effect's philosophy.
+## LLM Agent Quick Start
+
+Copy these instructions to share with your AI assistant. They'll explain how to set up the MCP server, use the CLI, and interact with Effect Solutions documentation. Just paste this into any agent session and it should guide you through the rest.
 
 <div className="flex justify-center my-8">
   <LLMInstructionsButton />
