@@ -31,9 +31,6 @@ import DOC__08_PROJECT_STRUCTURE from "../../website/docs/08-project-structure.m
 import DOC__09_INCREMENTAL_ADOPTION from "../../website/docs/09-incremental-adoption.md" with {
   type: "text",
 };
-import DOC__10_CLI_AND_MCP from "../../website/docs/10-cli-and-mcp.md" with {
-  type: "text",
-};
 
 type DocMeta = {
   readonly slug: string;
@@ -62,7 +59,6 @@ const RAW_DOCS: ReadonlyArray<RawDoc> = [
     filename: "09-incremental-adoption.md",
     source: DOC__09_INCREMENTAL_ADOPTION,
   },
-  { filename: "10-cli-and-mcp.md", source: DOC__10_CLI_AND_MCP },
 ];
 
 const filenameToSlug = (filename: string): string => {

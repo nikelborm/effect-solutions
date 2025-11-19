@@ -69,7 +69,7 @@ export function NavTitleCycler({ title, className }: NavTitleCyclerProps) {
 
 function FadeOverlays() {
   const fadeClass =
-    "pointer-events-none absolute left-0 right-0 bg-neutral-950/95";
+    "pointer-events-none absolute left-0 right-0 bg-neutral-950 group-hover:bg-neutral-900/50";
 
   return (
     <>

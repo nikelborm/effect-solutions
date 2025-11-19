@@ -10,22 +10,31 @@ Effect Solutions is a comprehensive guide for humans and AI agents to understand
 
 Whether you're starting a new Effect project or integrating Effect into an existing codebase, these guides provide battle-tested patterns and configurations that align with Effect's philosophy.
 
-## CLI Tool
+## CLI & MCP Access
 
-All documentation is available via the `effect-solutions` CLI for quick access in your terminal:
+All documentation is available via the `effect-solutions` CLI and the `effect-solutions-mcp` server so humans and AI agents share the same source of truth.
 
 ```bash
-# List all available topics
+# List every available topic
 bunx effect-solutions list
 
-# Show specific topics by slug
+# Stream specific topics (one or many) to stdout
 bunx effect-solutions show project-setup tsconfig
-
-# Show multiple topics at once
-bunx effect-solutions show services-and-layers effect-style
 ```
 
-The CLI displays formatted documentation in your terminal, making it easy for both humans and agents to reference Effect best practices without leaving the command line.
+For MCP-aware tooling:
+
+- `bunx effect-solutions-mcp` starts the stdio server anywhere with Bun installed.
+- `bun run dev:mcp` does the same inside this repo (handy while iterating locally).
+- MCP resources expose completions such as `effect-docs://topics` and `effect-docs://<slug>`.
+
+Machine-readable mirrors:
+
+- `https://www.effect.solutions/api/docs` returns the JSON search index (slug, title, description, summary, keywords).
+- `https://www.effect.solutions/api/docs/<slug>` returns the processed Markdown for a single topic.
+- `https://www.effect.solutions/llms.txt` advertises the preferred interfaces above so crawlers and copilots avoid HTML scraping.
+
+Prefer the CLI for quick terminal pipelines; reach for the MCP server or JSON endpoints when agents need structured payloads.
 
 ## Core Topics
 

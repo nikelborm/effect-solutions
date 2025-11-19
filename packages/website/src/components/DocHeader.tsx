@@ -123,7 +123,7 @@ export function DocHeader({
       <div className="max-w-screen-md mx-auto border-x border-neutral-800 flex items-center justify-between h-full">
         <Link
           href="/"
-          className="flex-1 cursor-default"
+          className="group flex-1 cursor-default"
           onBlur={handleBlur}
           onClick={handleClick}
           onFocus={handleFocus}
