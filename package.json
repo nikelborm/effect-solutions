@@ -15,6 +15,7 @@
     "build:website": "bun --cwd packages/website build",
     "build:cli": "bun --cwd packages/cli build",
     "build:mcp": "bun --cwd packages/mcp build",
+    "generate:manifest": "bun --cwd packages/cli run generate:manifest",
     "publish:cli": "cd packages/cli && bun publish",
     "publish:mcp": "cd packages/mcp && bun publish",
     "publish:all": "bun run publish:cli && bun run publish:mcp",

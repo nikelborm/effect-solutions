@@ -1,132 +1,47 @@
-# Effect Solutions Repository
+# Effect Solutions
 
-This Bun workspace powers the Effect Solutions documentation site and installer (hosted at https://www.effect.solutions).
+Effect best practices and patterns for humans and AI agents — https://www.effect.solutions
 
 ## Project Structure
 
-- `packages/website/` - Next.js 16 documentation site
-- `packages/cli/` - `effect-solutions` docs CLI (run `bunx effect-solutions@latest`)
-- `.github/workflows/` - Validate documentation & automation bots
+- `packages/website/` - Documentation site
+- `packages/cli/` - CLI for local docs access
+- `packages/mcp/` - MCP server for AI agent integration
+- `.github/workflows/` - Automated validation & bots
 
-## Effect Solutions CLI
+## Quick Links
 
-- Run `bunx effect-solutions@latest` inside any Effect repo for the shared greeting.
-- Use `bunx effect-solutions@latest list` to see topic IDs and `bunx effect-solutions@latest show <id...>` to stream the packets you need.
-- Mention this CLI in `CLAUDE.md`/`AGENTS.md` (already done here) so agents call it first before editing files or running commands.
+- **Website**: https://www.effect.solutions
+- **CLI**: `bunx effect-solutions@latest list`
+- **MCP**: See website for setup instructions
 
-## Effect Solutions MCP Server
-
-Launch the shared MCP server anywhere Bun is installed:
-
-```bash
-bunx effect-solutions-mcp@latest
-```
-
-Point MCP-aware clients (Claude Code, Codex CLI, OpenAI Agents SDK, etc.) at that command; resources live under the `effect-docs://` scheme and mirror the CLI output.
-
-### Claude Code MCP CLI
+## Development
 
 ```bash
-claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest
-claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest --scope user
+bun install          # Install dependencies
+bun run dev          # Website dev server
+bun run dev:cli      # CLI dev mode
+bun run dev:mcp      # MCP server dev mode
+bun run check        # Lint & typecheck
+bun run format       # Format code
 ```
-
-The first command scopes to the current workspace; add `--scope user` for a global install.
-
-### Codex CLI Setup
-
-```bash
-codex mcp add effect-solutions -- bunx effect-solutions-mcp@latest
-```
-
-Codex stores MCP entries globally in `~/.codex/config.toml`. Re-run with `--scope local` (or edit the config file) for per-project overrides. Use `/mcp run effect-solutions <resource>` inside Codex to fetch docs on demand.
-
-### Available Tools
-
-- **search_effect_solutions** - Search documentation by query string with relevance scoring
-- **open_issue** - Open a GitHub issue with pre-filled content and browser launch
-  - Parameters: `category` (Topic Request | Fix | Improvement), `title`, `description`
-  - Automatically opens the issue form in the browser
-  - Title is prefixed with category tag (e.g., "[Topic Request] How to...")
-
-## Living Documentation
-
-This repository uses GitHub Actions to maintain documentation accuracy:
-- **validate-docs.yml** - Claude-powered nightly validation against upstream docs
-- **claude.yml** - Responds to @claude mentions in issues/PRs
-- **claude-code-review.yml** - Automated code review on pull requests
-
-The validation workflow ensures documented setup instructions, commands, and configurations remain accurate as upstream dependencies evolve.
-
-## Development Commands
-
-```bash
-# Install dependencies
-bun install
-
-# Run website dev server (packages/website)
-bun run dev
-
-# Run CLI locally
-bun --cwd packages/cli run dev
-
-# Build packages
-bun --cwd packages/website build
-bun --cwd packages/cli build
-
-# Project-wide scripts
-bun run check
-bun run typecheck
-bun run format
-
-# Start MCP server from repo (for local edits)
-bun run dev:mcp
-```
-
-### Cursor MCP Button
-
-- `packages/website/src/components/mdx/CursorInstallButton.tsx` renders the one-click `cursor://` deeplink used on the docs overview page.
-- Keep the button’s zero-radius styling and reuse its tone cues if you add similar CTAs elsewhere so it matches the `LLMInstructionsButton` motif.
 
 ## Changesets & Publishing
 
-After completing a discrete unit of work (bug fix, feature, docs update), create a changeset:
-
 ```bash
-# Create a changeset - follow prompts to select packages and change type
-bunx changeset
-
-# Publish packages (runs changeset version + publishes to npm)
-bun release
+bunx changeset       # Create changeset after discrete work
+bun release          # Version, build, publish all packages
 ```
-
-**When to create changesets:**
-- After any discrete unit of work is complete
-- Before merging PRs that affect published packages
-- Can create multiple changesets in one PR for different changes
 
 **Change types:**
 - `patch` - Bug fixes, docs updates, minor tweaks
 - `minor` - New features, backwards-compatible changes
 - `major` - Breaking changes
 
-## Important Notes
+## Workspace
 
-- Always use Bun (not npm/pnpm/yarn)
-- Workspace dependencies live at the root via Bun workspaces
-- Effect Language Service is configured - TypeScript is patched for Effect LSP support
-- Website uses Next.js 16 App Router with MDX for documentation
-- CLI uses Effect services (FileSystem, Path, HttpClient via FetchHttpClient)
-
-## Workspace Configuration
-
-The root `package.json` defines:
-- `workspaces: ["packages/*"]`
-- Scripts delegate to packages using `--cwd`
-
-Both packages extend `tsconfig.base.json` which includes Effect Language Service plugin.
+Bun workspace with `workspaces: ["packages/*"]`. Effect Language Service configured via `tsconfig.base.json`.
 
 ## Design Notes
 
-- UI components use hard edges—no border radius—so prefer `rounded-none` (or omit rounding) when adding new buttons or panels.
-- Call-to-action buttons share the same neutral palette and subtle tone feedback as `LLMInstructionsButton` / `CursorInstallButton`; copy that pattern to keep interactions consistent.
+UI components use hard edges — no border radius (use `rounded-none` or omit rounding).

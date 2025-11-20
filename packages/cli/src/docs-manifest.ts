@@ -1,43 +1,45 @@
 import matter from "gray-matter";
 
-// Import website docs
-import DOC__00_OVERVIEW from "../../website/docs/00-overview.md" with {
+// Auto-generated manifest - DO NOT EDIT MANUALLY
+// Run: bun run generate:manifest
+
+import DOC__00 from "../../website/docs/00-overview.md" with {
   type: "text",
 };
-import DOC__01_PROJECT_SETUP from "../../website/docs/01-project-setup.md" with {
+import DOC__01 from "../../website/docs/01-project-setup.md" with {
   type: "text",
 };
-import DOC__02_TSCONFIG from "../../website/docs/02-tsconfig.md" with {
+import DOC__02 from "../../website/docs/02-tsconfig.md" with {
   type: "text",
 };
-import DOC__03_SERVICES_LAYERS from "../../website/docs/03-services-and-layers.md" with {
+import DOC__03 from "../../website/docs/03-services-and-layers.md" with {
   type: "text",
 };
-import DOC__04_EFFECT_STYLE from "../../website/docs/04-effect-style.md" with {
+import DOC__04 from "../../website/docs/04-effect-style.md" with {
   type: "text",
 };
-import DOC__05_DATA_TYPES from "../../website/docs/05-data-types.md" with {
+import DOC__05 from "../../website/docs/05-data-types.md" with {
   type: "text",
 };
-import DOC__06_ERROR_HANDLING from "../../website/docs/06-error-handling.md" with {
+import DOC__06 from "../../website/docs/06-error-handling.md" with {
   type: "text",
 };
-import DOC__07_CONFIG from "../../website/docs/07-config.md" with {
+import DOC__07 from "../../website/docs/07-config.md" with {
   type: "text",
 };
-import DOC__08_PROJECT_STRUCTURE from "../../website/docs/08-project-structure.md" with {
+import DOC__08 from "../../website/docs/08-project-structure.md" with {
   type: "text",
 };
-import DOC__09_INCREMENTAL_ADOPTION from "../../website/docs/09-incremental-adoption.md" with {
+import DOC__09 from "../../website/docs/09-incremental-adoption.md" with {
   type: "text",
 };
-import DOC__10_HTTP_CLIENTS from "../../website/docs/10-http-clients.md" with {
+import DOC__10 from "../../website/docs/10-http-clients.md" with {
   type: "text",
 };
-import DOC__11_TESTING_WITH_VITEST from "../../website/docs/11-testing-with-vitest.md" with {
+import DOC__11 from "../../website/docs/11-testing-with-vitest.md" with {
   type: "text",
 };
-import DOC__12_OBSERVABILITY from "../../website/docs/12-observability.md" with {
+import DOC__12 from "../../website/docs/12-observability.md" with {
   type: "text",
 };
 
@@ -55,25 +57,19 @@ type RawDoc = {
 };
 
 const RAW_DOCS: ReadonlyArray<RawDoc> = [
-  { filename: "00-overview.md", source: DOC__00_OVERVIEW },
-  { filename: "01-project-setup.md", source: DOC__01_PROJECT_SETUP },
-  { filename: "02-tsconfig.md", source: DOC__02_TSCONFIG },
-  { filename: "03-services-and-layers.md", source: DOC__03_SERVICES_LAYERS },
-  { filename: "04-effect-style.md", source: DOC__04_EFFECT_STYLE },
-  { filename: "05-data-types.md", source: DOC__05_DATA_TYPES },
-  { filename: "06-error-handling.md", source: DOC__06_ERROR_HANDLING },
-  { filename: "07-config.md", source: DOC__07_CONFIG },
-  { filename: "08-project-structure.md", source: DOC__08_PROJECT_STRUCTURE },
-  {
-    filename: "09-incremental-adoption.md",
-    source: DOC__09_INCREMENTAL_ADOPTION,
-  },
-  { filename: "10-http-clients.md", source: DOC__10_HTTP_CLIENTS },
-  {
-    filename: "11-testing-with-vitest.md",
-    source: DOC__11_TESTING_WITH_VITEST,
-  },
-  { filename: "12-observability.md", source: DOC__12_OBSERVABILITY },
+  { filename: "00-overview.md", source: DOC__00 },
+  { filename: "01-project-setup.md", source: DOC__01 },
+  { filename: "02-tsconfig.md", source: DOC__02 },
+  { filename: "03-services-and-layers.md", source: DOC__03 },
+  { filename: "04-effect-style.md", source: DOC__04 },
+  { filename: "05-data-types.md", source: DOC__05 },
+  { filename: "06-error-handling.md", source: DOC__06 },
+  { filename: "07-config.md", source: DOC__07 },
+  { filename: "08-project-structure.md", source: DOC__08 },
+  { filename: "09-incremental-adoption.md", source: DOC__09 },
+  { filename: "10-http-clients.md", source: DOC__10 },
+  { filename: "11-testing-with-vitest.md", source: DOC__11 },
+  { filename: "12-observability.md", source: DOC__12 },
 ];
 
 const filenameToSlug = (filename: string): string => {
