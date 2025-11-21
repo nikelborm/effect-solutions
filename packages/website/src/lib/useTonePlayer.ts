@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSoundSettings } from "./useSoundSettings";
 
 interface ToneOptions {
@@ -12,12 +12,40 @@ interface ToneOptions {
   force?: boolean;
 }
 
+// Global state to track user interaction (shared across all instances)
+let hasUserInteracted = false;
+let listenersInitialized = false;
+
+// Set up interaction listeners once globally
+const initializeInteractionListeners = () => {
+  if (listenersInitialized) return;
+  listenersInitialized = true;
+
+  const handleFirstInteraction = () => {
+    hasUserInteracted = true;
+    document.removeEventListener("click", handleFirstInteraction);
+    document.removeEventListener("keydown", handleFirstInteraction);
+    document.removeEventListener("touchend", handleFirstInteraction);
+  };
+
+  document.addEventListener("click", handleFirstInteraction, { once: true });
+  document.addEventListener("keydown", handleFirstInteraction, { once: true });
+  document.addEventListener("touchend", handleFirstInteraction, { once: true });
+};
+
 // Lightweight Web Audio helper for short UI tones.
 export function useTonePlayer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const isInitializedRef = useRef(false);
   const isPlayingRef = useRef(false);
   const { isMuted } = useSoundSettings();
+
+  // Initialize listeners once on first hook mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      initializeInteractionListeners();
+    }
+  }, []);
 
   const getContext = useCallback(async () => {
     if (typeof window === "undefined") {
@@ -67,6 +95,11 @@ export function useTonePlayer() {
       const force = options?.force === true;
 
       if (isMuted && !force) {
+        return;
+      }
+
+      // Don't play anything until user has interacted
+      if (!hasUserInteracted) {
         return;
       }
 

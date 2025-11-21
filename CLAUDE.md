@@ -35,9 +35,15 @@ The Playwright generator lives at `packages/website/scripts/generate-og.ts` and 
 ## Changesets & Publishing
 
 ```bash
-bunx changeset       # Create changeset after discrete work
-bun release          # Version, build, publish all packages
+bun scripts/changeset-named.ts "description"  # Create named changeset
+bun release                                    # Version, build, publish all packages
 ```
+
+**Creating changesets:**
+- Use `bun scripts/changeset-named.ts "fix audio overlap"` to create descriptive changeset files
+- Avoids random names like "purple-olives-look.md"
+- Script prompts for package selection and change type interactively
+- Resulting file: `.changeset/fix-audio-overlap.md`
 
 **Change types:**
 - `patch` - Bug fixes, docs updates, minor tweaks
@@ -124,8 +130,8 @@ Website deploys automatically via Vercel on push to `main`.
 CLI and MCP packages publish to npm via changesets workflow:
 
 ```bash
-bunx changeset         # Create changeset
-bun release            # Version, build, publish
+bun scripts/changeset-named.ts "description"  # Create changeset
+bun release                                    # Version, build, publish
 ```
 
 ### Release flow (tag → CI → publish)
@@ -177,7 +183,7 @@ Effect-based MCP server using:
 2. Create feature branch
 3. Make changes
 4. Run `bun run check` and `bun test`
-5. Create changeset: `bunx changeset`
+5. Create changeset: `bun scripts/changeset-named.ts "description"`
 6. Submit PR
 
 For documentation changes:
