@@ -46,10 +46,8 @@ export function DocList({ docs }: DocListProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
-  const totalDocs = docs.length;
-
-  const groupedDocs = useMemo(() => {
-    return docs.reduce<Record<DocGroup, typeof docs>>(
+  const { groupedDocs, groupStartIndexes, totalDocs } = useMemo(() => {
+    const grouped = docs.reduce<Record<DocGroup, typeof docs>>(
       (acc, doc) => {
         const group = assignGroup(doc);
         acc[group] = acc[group] ? [...acc[group], doc] : [doc];
@@ -57,6 +55,22 @@ export function DocList({ docs }: DocListProps) {
       },
       {} as Record<DocGroup, typeof docs>,
     );
+
+    const flattened: Array<{ doc: DocListProps["docs"][number]; group: DocGroup }> = [];
+    const starts: number[] = [];
+
+    GROUP_DISPLAY_ORDER.forEach((group) => {
+      const groupDocs = grouped[group];
+      if (!groupDocs?.length) return;
+      starts.push(flattened.length);
+      groupDocs.forEach((doc) => flattened.push({ doc, group }));
+    });
+
+    return {
+      groupedDocs: grouped,
+      groupStartIndexes: starts,
+      totalDocs: flattened.length,
+    };
   }, [docs]);
 
   // Keep refs array in sync with docs length
@@ -81,9 +95,16 @@ export function DocList({ docs }: DocListProps) {
   useEffect(() => {
     if (totalDocs === 0) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const getGroupIndexForDoc = (docIndex: number) => {
+      for (let i = 0; i < groupStartIndexes.length; i++) {
+        const start = groupStartIndexes[i];
+        const nextStart = groupStartIndexes[i + 1] ?? totalDocs;
+        if (docIndex >= start && docIndex < nextStart) return i;
+      }
+      return -1;
+    };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target) {
         const tagName = target.tagName;
@@ -97,21 +118,67 @@ export function DocList({ docs }: DocListProps) {
         }
       }
 
-      if (event.key === "ArrowDown") {
+      const navDown = event.key === "ArrowDown";
+      const navUp = event.key === "ArrowUp";
+      const navEnter = event.key === "Enter";
+
+      if (!navDown && !navUp && !navEnter) return;
+
+      // Command shortcuts
+      if (navDown && event.metaKey) {
+        event.preventDefault();
+        setSelectedIndex(totalDocs === 0 ? null : totalDocs - 1);
+        return;
+      }
+      if (navUp && event.metaKey) {
+        event.preventDefault();
+        setSelectedIndex(totalDocs === 0 ? null : 0);
+        return;
+      }
+
+      // Option (Alt) group jumps
+      if (navDown && event.altKey) {
+        event.preventDefault();
+        setSelectedIndex((prev) => {
+          if (groupStartIndexes.length === 0) return null;
+          if (prev === null) return 0;
+          const currentGroupIndex = getGroupIndexForDoc(prev);
+          const nextGroupStart = groupStartIndexes[currentGroupIndex + 1];
+          if (nextGroupStart === undefined) return groupStartIndexes[currentGroupIndex];
+          return nextGroupStart;
+        });
+        return;
+      }
+
+      if (navUp && event.altKey) {
+        event.preventDefault();
+        setSelectedIndex((prev) => {
+          if (groupStartIndexes.length === 0) return null;
+          if (prev === null) return 0;
+          const currentGroupIndex = getGroupIndexForDoc(prev);
+          const prevGroupStart = groupStartIndexes[currentGroupIndex - 1];
+          if (prevGroupStart === undefined) return groupStartIndexes[0];
+          return prevGroupStart;
+        });
+        return;
+      }
+
+      // Regular single-step navigation
+      if (navDown) {
         event.preventDefault();
         setSelectedIndex((prev) => {
           if (totalDocs === 0) return null;
           if (prev === null) return 0;
           return (prev + 1) % totalDocs;
         });
-      } else if (event.key === "ArrowUp") {
+      } else if (navUp) {
         event.preventDefault();
         setSelectedIndex((prev) => {
           if (totalDocs === 0) return null;
           if (prev === null) return totalDocs - 1;
           return (prev - 1 + totalDocs) % totalDocs;
         });
-      } else if (event.key === "Enter" && selectedIndex !== null) {
+      } else if (navEnter && selectedIndex !== null) {
         const targetLink = linkRefs.current[selectedIndex];
         if (targetLink) {
           event.preventDefault();
@@ -122,7 +189,7 @@ export function DocList({ docs }: DocListProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, totalDocs]);
+  }, [groupStartIndexes, selectedIndex, totalDocs]);
 
   const handleMouseEnter = useCallback(() => {
     playHoverSfx();
