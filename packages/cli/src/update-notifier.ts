@@ -1,7 +1,7 @@
-import { Console, Effect, Option, pipe } from "effect";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { Console, Effect, Option } from "effect";
 
 const CHECK_INTERVAL_MS = 1000 * 60 * 60 * 24; // daily
 const TIMEOUT_MS = 3_000;
@@ -42,7 +42,7 @@ const writeCache = (file: string, data: CacheFile) =>
       await writeFile(file, JSON.stringify(data), "utf8");
     },
     catch: () => {},
-  }).pipe(Effect.catchAll(() => Effect.unit));
+  }).pipe(Effect.catchAll(() => Effect.void));
 
 const fetchLatest = (pkgName: string) =>
   Effect.tryPromise({
@@ -73,35 +73,33 @@ const logUpdate = (current: string, latest: string, pkgName: string) =>
   );
 
 export const maybeNotifyUpdate = (pkgName: string, currentVersion: string) =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     if (isCiLike()) return;
 
     const now = Date.now();
     const file = cachePath(pkgName);
 
-    const cache = yield* _(readCache(file));
+    const cache = yield* readCache(file);
     if (Option.isSome(cache)) {
       const cached = cache.value;
       if (cached.nextCheck > now) {
         if (cached.latest !== currentVersion) {
-          yield* _(logUpdate(currentVersion, cached.latest, pkgName));
+          yield* logUpdate(currentVersion, cached.latest, pkgName);
         }
         return;
       }
     }
 
-    const latest = yield* _(fetchLatest(pkgName));
+    const latest = yield* fetchLatest(pkgName);
     if (Option.isNone(latest)) return;
 
     const latestVersion = latest.value;
-    yield* _(
-      writeCache(file, {
-        latest: latestVersion,
-        nextCheck: now + CHECK_INTERVAL_MS,
-      }),
-    );
+    yield* writeCache(file, {
+      latest: latestVersion,
+      nextCheck: now + CHECK_INTERVAL_MS,
+    });
 
     if (latestVersion !== currentVersion) {
-      yield* _(logUpdate(currentVersion, latestVersion, pkgName));
+      yield* logUpdate(currentVersion, latestVersion, pkgName);
     }
-  }).pipe(Effect.catchAll(() => Effect.unit));
+  }).pipe(Effect.catchAll(() => Effect.void));

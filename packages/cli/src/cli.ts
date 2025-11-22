@@ -1,16 +1,16 @@
 #!/usr/bin/env bun
 
-import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { Console, Effect, pipe } from "effect";
 import { Args, Command } from "@effect/cli";
-import { DOC_LOOKUP, DOCS } from "./docs-manifest";
-import {
-  BrowserOpenStrategy,
-  OpenIssueCategory,
-  openIssue,
-} from "./open-issue-service";
+import { BunContext, BunRuntime } from "@effect/platform-bun";
+import { Console, Effect, Option, pipe } from "effect";
 import pc from "picocolors";
 import pkg from "../package.json" with { type: "json" };
+import { DOC_LOOKUP, DOCS } from "./docs-manifest";
+import {
+  type BrowserOpenStrategy,
+  type OpenIssueCategory,
+  openIssue,
+} from "./open-issue-service";
 import { maybeNotifyUpdate } from "./update-notifier";
 
 const CLI_NAME = "effect-solutions";
@@ -82,13 +82,12 @@ export const renderDocs = (requested: ReadonlyArray<string>) => {
     if (!doc) {
       throw new Error(`Internal error: doc ${slug} not found in lookup`);
     }
-    const title =
-      pc.bold(pc.cyan(`## ${doc.title}`)) + " " + pc.dim(`(${doc.slug})`);
+    const title = `${pc.bold(pc.cyan(`## ${doc.title}`))} ${pc.dim(`(${doc.slug})`)}`;
     const body = colorizeCodeReferences(doc.body.trim());
     return [title, "", body].filter(Boolean).join("\n");
   });
 
-  return `${blocks.join("\n\n" + pc.dim("---") + "\n\n")}\n`;
+  return `${blocks.join(`\n\n${pc.dim("---")}\n\n`)}\n`;
 };
 
 const listDocs = Console.log(renderDocList());
@@ -111,33 +110,38 @@ const showCommand = Command.make("show", {
 );
 
 const openIssueCommand = Command.make("open-issue", {
-  category: Args.text({
-    name: "category",
-    description: "Topic Request | Fix | Improvement",
-  }),
+  category: Args.text({ name: "category" }),
   title: Args.text({ name: "title" }),
   description: Args.text({ name: "description" }),
-  strategy: Args.text({ name: "strategy", optional: true }),
+  strategy: Args.optional(Args.text({ name: "strategy" })),
 }).pipe(
   Command.withDescription(
     "Open a pre-filled GitHub issue in the effect-solutions repo",
   ),
   Command.withHandler(({ category, title, description, strategy }) =>
     Effect.sync(() => {
-      const result = openIssue({
+      const strategyValue = Option.getOrUndefined(strategy);
+
+      return openIssue({
         category: category as OpenIssueCategory,
         title,
         description,
-        strategy: strategy as BrowserOpenStrategy | undefined,
+        ...(strategyValue
+          ? { strategy: strategyValue as BrowserOpenStrategy }
+          : {}),
       });
-      const lines = [
-        pc.bold("Effect Solutions issue"),
-        `URL: ${pc.cyan(result.issueUrl)}`,
-        `Opened: ${result.opened ? pc.green("yes") : pc.yellow("no")} (${result.openedWith})`,
-        result.message,
-      ];
-      return Console.log(lines.join("\n"));
-    }),
+    }).pipe(
+      Effect.flatMap((result) =>
+        Console.log(
+          [
+            pc.bold("Effect Solutions issue"),
+            `URL: ${pc.cyan(result.issueUrl)}`,
+            `Opened: ${result.opened ? pc.green("yes") : pc.yellow("no")} (${result.openedWith})`,
+            result.message,
+          ].join("\n"),
+        ),
+      ),
+    ),
   ),
 );
 

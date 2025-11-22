@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile, readFile, mkdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { Effect } from "effect";
@@ -7,7 +7,7 @@ import { maybeNotifyUpdate } from "./update-notifier";
 
 const pkgName = "effect-solutions";
 
-const readCache = async (home: string) => {
+const _readCache = async (home: string) => {
   const file = path.join(home, ".config", pkgName, "update.json");
   const raw = await readFile(file, "utf8");
   return JSON.parse(raw) as { latest: string; nextCheck: number };
