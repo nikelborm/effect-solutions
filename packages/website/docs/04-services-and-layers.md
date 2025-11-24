@@ -6,7 +6,7 @@ order: 4
 
 # Services & Layers
 
-Effect's service pattern provides a deterministic way to organize your application through dependency injection. By defining services as Context.Tag classes and composing them into Layers, you create explicit dependency graphs that are type-safe, testable, and modular.
+Effect's service pattern provides a deterministic way to organize your application through dependency injection. By defining services as `Context.Tag` classes and composing them into Layers, you create explicit dependency graphs that are type-safe, testable, and modular.
 
 ## What is a Service?
 
@@ -38,26 +38,27 @@ class Logger extends Context.Tag("@app/Logger")<
 
 **General recommendations:**
 
-- **Tag identifiers must be unique**. Use `@app/ServiceName` prefix pattern
+- **Tag identifiers must be unique**. Use `@path/to/ServiceName` prefix pattern
 - **Service methods should have no dependencies (`R = never`)**. Dependencies are handled via Layer composition, not through method signatures
-- **Keep interfaces focused**. Each service should have a clear, single responsibility
-- **Define services as classes**. This provides a namespace for layer implementations
 - **Use readonly properties**. Services should not expose mutable state directly
 
 ## What is a Layer?
 
 A Layer is an implementation of a service. Layers handle:
 
-1. **Setup/initialization** (connecting to databases, reading config, etc.)
-2. **Dependency resolution** (acquiring other services they need)
-3. **Resource lifecycle** (cleanup happens automatically)
+1. **Setup/initialization**: Connecting to databases, reading config, etc.
+2. **Dependency resolution**: Acquiring other services they need
+3. **Resource lifecycle**: Cleanup happens automatically
 
 ```typescript
 import { HttpClient, HttpClientResponse } from "@effect/platform"
 import { Schema } from "effect"
 
+const UserId = Schema.String.pipe(Schema.brand("UserId"))
+type UserId = typeof UserId.Type
+
 class User extends Schema.Class<User>("User")({
-  id: Schema.String,
+  id: UserId,
   name: Schema.String,
   email: Schema.String,
 }) {}
@@ -72,7 +73,7 @@ class Analytics extends Context.Tag("@app/Analytics")<
 class Users extends Context.Tag("@app/Users")<
   Users,
   {
-    readonly findById: (id: string) => Effect.Effect<User, Error>
+    readonly findById: (id: UserId) => Effect.Effect<User, Error>
   }
 >() {
   static readonly layer = Layer.effect(
@@ -83,7 +84,7 @@ class Users extends Context.Tag("@app/Users")<
       const analytics = yield* Analytics
 
       // 2. define the service methods
-      const findById = Effect.fn("Users.findById")(function* (id: string) {
+      const findById = Effect.fn("Users.findById")(function* (id: UserId) {
         yield* analytics.track("user.find", { id })
         const response = yield* http.get(`https://api.example.com/users/${id}`)
         return yield* HttpClientResponse.schemaBodyJson(User)(response)
@@ -98,92 +99,143 @@ class Users extends Context.Tag("@app/Users")<
 }
 ```
 
-**Layer naming conventions:**
-
-- Use camelCase with `Layer` suffix (`layer`, `testLayer`, `mockLayer`)
-- `layer` is the production implementation
-- Use descriptive names for variants: `testLayer`, `mockLayer`, `localLayer`
-- Avoid `liveLayer` prefix. Just use `layer` for primary implementation
-
-**When to use each Layer constructor:**
-
-- `Layer.sync()`: Synchronous setup, returns service immediately
-- `Layer.effect()`: Async setup or needs to yield from other services
-- `Layer.succeed()`: Static service with no setup logic
-
-These are best practices to follow when building services and layers.
+**Layer naming:** camelCase with `Layer` suffix: `layer`, `testLayer`, `mongoLayer`, etc.
 
 ## Designing with Services First
 
-Start by sketching the service tags (no implementations) so you can reason about boundaries and dependencies before writing any production code.
+Start by sketching leaf service tags (without implementations). This lets you write real TypeScript for higher-level orchestration services that type-checks even though the leaf services aren't runnable yet.
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Clock, Context, Effect, Layer, Schema } from "effect"
 
-// Service contracts only
-class Database extends Context.Tag("@app/Database")<
-  Database,
+// Branded types for IDs
+const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"))
+type RegistrationId = typeof RegistrationId.Type
+
+const EventId = Schema.String.pipe(Schema.brand("EventId"))
+type EventId = typeof EventId.Type
+
+const UserId = Schema.String.pipe(Schema.brand("UserId"))
+type UserId = typeof UserId.Type
+
+const TicketId = Schema.String.pipe(Schema.brand("TicketId"))
+type TicketId = typeof TicketId.Type
+
+// Domain models
+class Registration extends Schema.Class<Registration>("Registration")({
+  id: RegistrationId,
+  eventId: EventId,
+  userId: UserId,
+  ticketId: TicketId,
+  registeredAt: Schema.Date,
+}) {}
+
+class Ticket extends Schema.Class<Ticket>("Ticket")({
+  id: TicketId,
+  eventId: EventId,
+  code: Schema.String,
+}) {}
+
+// Leaf services: contracts only
+class Tickets extends Context.Tag("@app/Tickets")<
+  Tickets,
   {
-    readonly query: (sql: string) => Effect.Effect<unknown[]>
-    readonly execute: (sql: string) => Effect.Effect<void>
+    readonly issue: (
+      eventId: EventId,
+      userId: UserId
+    ) => Effect.Effect<Ticket>
+    readonly validate: (ticketId: TicketId) => Effect.Effect<boolean>
   }
 >() {}
 
-class Cache extends Context.Tag("@app/Cache")<
-  Cache,
+class Emails extends Context.Tag("@app/Emails")<
+  Emails,
   {
-    readonly get: (key: string) => Effect.Effect<string | null>
-    readonly set: (key: string, value: string) => Effect.Effect<void>
+    readonly send: (
+      to: string,
+      subject: string,
+      body: string
+    ) => Effect.Effect<void>
   }
 >() {}
 
-class Logger extends Context.Tag("@app/Logger")<
-  Logger,
+class Analytics extends Context.Tag("@app/Analytics")<
+  Analytics,
   {
-    readonly log: (message: string) => Effect.Effect<void>
+    readonly track: (
+      event: string,
+      properties: Record<string, unknown>
+    ) => Effect.Effect<void>
   }
 >() {}
 
-class UserService extends Context.Tag("@app/UserService")<
-  UserService,
+// Higher-level service: orchestrates leaf services
+class Events extends Context.Tag("@app/Events")<
+  Events,
   {
-    readonly getUser: (id: string) => Effect.Effect<unknown>
+    readonly register: (
+      eventId: EventId,
+      userId: UserId
+    ) => Effect.Effect<Registration>
   }
 >() {
   static readonly layer = Layer.effect(
-    UserService,
+    Events,
     Effect.gen(function* () {
-      const db = yield* Database
-      const cache = yield* Cache
-      const logger = yield* Logger
+      const tickets = yield* Tickets
+      const emails = yield* Emails
+      const analytics = yield* Analytics
 
-      const getUser = Effect.fn("UserService.getUser")(function* (id: string) {
-        yield* logger.log(`Fetching user ${id}`)
-        const cached = yield* cache.get(`user:${id}`)
-        if (cached) return JSON.parse(cached)
+      const register = Effect.fn("Events.register")(
+        function* (eventId: EventId, userId: UserId) {
+          const ticket = yield* tickets.issue(eventId, userId)
+          const now = yield* Clock.currentTimeMillis
 
-        const result = yield* db.query(`SELECT * FROM users WHERE id = ?`)
-        return result[0]
-      })
+          const registration = new Registration({
+            id: RegistrationId.make(Schema.randomUUID()),
+            eventId,
+            userId,
+            ticketId: ticket.id,
+            registeredAt: new Date(now),
+          })
 
-      return UserService.of({ getUser })
+          yield* emails.send(
+            `user-${userId}@example.com`,
+            "Event Registration Confirmed",
+            `Your ticket code: ${ticket.code}`
+          )
+
+          yield* analytics.track("event.registered", {
+            eventId,
+            userId,
+            ticketId: ticket.id,
+          })
+
+          return registration
+        }
+      )
+
+      return Events.of({ register })
     })
   )
 }
 ```
 
+> **Note:** This code won't run yet since Tickets, Email, and Analytics lack implementations. But Events orchestration logic is real TypeScript that compiles and lets you model dependencies before writing production layers.
+
 Benefits:
 
-- Service contracts are explicit before any concrete layers exist.
-- You can model orchestration logic and types in isolation.
-- Adding mocks or production implementations later doesn't change call sites.
+- Leaf service contracts are explicit. Tickets, Email, and Analytics return typed data (no parsing needed).
+- Higher-level orchestration (Events) coordinates multiple services cleanly.
+- Type-checks immediately even though leaf services aren't implemented yet.
+- Adding production implementations later doesn't change Events code.
 
-## Mock Implementations
+## Test Implementations
 
-When designing with services first, create lightweight mock implementations for testing. Use `Effect.sync` or `Effect.succeed` when your mock doesn't need async operations or effects.
+When designing with services first, create lightweight test implementations. Use `Effect.sync` or `Effect.succeed` when your test doesn't need async operations or effects.
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Console, Context, Effect, Layer } from "effect"
 
 class Database extends Context.Tag("@app/Database")<
   Database,
@@ -192,35 +244,18 @@ class Database extends Context.Tag("@app/Database")<
     readonly execute: (sql: string) => Effect.Effect<void>
   }
 >() {
-  // Mock using in-memory state
-  static readonly mockLayer = Layer.sync(Database, () => {
+  static readonly testLayer = Layer.sync(Database, () => {
     let records: Record<string, unknown> = {
       "user-1": { id: "user-1", name: "Alice" },
       "user-2": { id: "user-2", name: "Bob" },
     }
 
-    return Database.of({
-      query: (sql) => Effect.succeed(Object.values(records)),
-      execute: (sql) =>
-        Effect.sync(() => {
-          // Parse and mutate records in-memory
-          console.log(`Mock execute: ${sql}`)
-        }),
-    })
-  })
+    const query = (sql: string) => Effect.succeed(Object.values(records))
 
-  // Production layer would connect to real database
-  // static readonly layer = Layer.effect(
-  //   Database,
-  //   Effect.gen(function* () {
-  //     const pool = yield* createConnectionPool()
-  //
-  //     return Database.of({
-  //       query: (sql) => Effect.tryPromise(() => pool.query(sql)),
-  //       execute: (sql) => Effect.tryPromise(() => pool.execute(sql)),
-  //     })
-  //   })
-  // )
+    const execute = (sql: string) => Console.log(`Test execute: ${sql}`)
+
+    return Database.of({ query, execute })
+  })
 }
 
 class Cache extends Context.Tag("@app/Cache")<
@@ -230,120 +265,13 @@ class Cache extends Context.Tag("@app/Cache")<
     readonly set: (key: string, value: string) => Effect.Effect<void>
   }
 >() {
-  // Mock with Map
-  static readonly mockLayer = Layer.sync(Cache, () => {
+  static readonly testLayer = Layer.sync(Cache, () => {
     const store = new Map<string, string>()
 
-    return Cache.of({
-      get: (key) => Effect.succeed(store.get(key) ?? null),
-      set: (key, value) => Effect.sync(() => void store.set(key, value)),
-    })
+    const get = (key: string) => Effect.succeed(store.get(key) ?? null)
+    const set = (key: string, value: string) => Effect.sync(() => void store.set(key, value))
+
+    return Cache.of({ get, set })
   })
-
-  // Production layer would connect to Redis
-  // static readonly layer = Layer.effect(
-  //   Cache,
-  //   Effect.gen(function* () {
-  //     const redis = yield* connectToRedis()
-  //
-  //     return Cache.of({
-  //       get: (key) => Effect.tryPromise(() => redis.get(key)),
-  //       set: (key, value) => Effect.tryPromise(() => redis.set(key, value)),
-  //     })
-  //   })
-  // )
 }
 ```
-
-**Layer naming:**
-
-- All layer properties use camelCase and end with `Layer` suffix
-- Use `layer` for the production implementation
-- Use descriptive names for variants: `testLayer`, `mockLayer`, `localLayer`, etc.
-- Avoid `liveLayer` prefix - just use `layer` for the primary implementation
-
-**When to use each constructor:**
-
-- `Layer.sync()`: synchronous setup, returns service immediately
-- `Layer.effect()`: async setup or needs to yield from other services
-- `Layer.succeed()`: static service with no setup logic
-
-## Layer Composition
-
-Put layer implementations as static properties using **camelCase** and `.of()` for clarity.
-
-**Tag identifiers must be unique**. Use `@app/ServiceName` prefix pattern to avoid collisions:
-
-```typescript
-import { Config, Context, Effect, Layer, Redacted } from "effect"
-
-// Config service using Config primitives
-class AppConfig extends Context.Tag("@app/AppConfig")<
-  AppConfig,
-  {
-    readonly apiUrl: string
-    readonly timeout: number
-    readonly token: Redacted.Redacted
-  }
->() {
-  static readonly layer = Layer.effect(
-    AppConfig,
-    Effect.gen(function* () {
-      const apiUrl = yield* Config.string("API_URL").pipe(
-        Config.orElse(() => Config.succeed("https://api.example.com"))
-      )
-      const timeout = yield* Config.integer("API_TIMEOUT").pipe(
-        Config.orElse(() => Config.succeed(5000))
-      )
-      const token = yield* Config.redacted("API_TOKEN")
-
-      return AppConfig.of({ apiUrl, timeout, token })
-    })
-  )
-}
-
-// Service that depends on config
-export class ApiClient extends Context.Tag("@app/ApiClient")<
-  ApiClient,
-  {
-    readonly fetch: (path: string) => Effect.Effect<string>
-  }
->() {
-  static readonly layer = Layer.effect(
-    ApiClient,
-    Effect.gen(function* () {
-      const config = yield* AppConfig
-
-      const fetch = Effect.fn("ApiClient.fetch")(function* (path: string) {
-        const url = `${config.apiUrl}${path}`
-        yield* Effect.log(
-          `Fetching ${url} (timeout: ${
-            config.timeout
-          }ms, token: ${Redacted.value(config.token)})`
-        )
-        return `Response from ${url}`
-      })
-
-      return ApiClient.of({ fetch })
-    })
-  )
-}
-
-// Combine layers
-const mainLayer = ApiClient.layer.pipe(Layer.provide(AppConfig.layer))
-
-// Usage
-const program = Effect.gen(function* () {
-  const client = yield* ApiClient
-  const result = yield* client.fetch("/users")
-  yield* Effect.log(result)
-})
-
-const main = program.pipe(Effect.provide(mainLayer))
-```
-
-**Naming conventions:**
-
-- Tag identifiers: Always use `@app/ServiceName` prefix pattern
-- Layer properties: camelCase with `Layer` suffix (`layer`, `testLayer`, `mockLayer`)
-- Always use `.of()` to make it clear what service you're constructing

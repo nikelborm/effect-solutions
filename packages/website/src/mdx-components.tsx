@@ -179,7 +179,7 @@ export function useMDXComponents(
       <div className="not-prose text-red-500">{children}</div>
     ),
     blockquote: ({ children }) => (
-      <blockquote className=" border-l border-neutral-700/70 pl-6 text-[1.1rem] italic text-neutral-200">
+      <blockquote className="mx-6 mb-6 border border-neutral-700/70 rounded-none py-5 text-[1.05rem] text-neutral-200 bg-neutral-900/50">
         {children}
       </blockquote>
     ),
