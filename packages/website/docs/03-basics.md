@@ -30,7 +30,7 @@ const program = Effect.gen(function* () {
 
 ## Effect.fn
 
-Use `Effect.fn` with generator functions for traced, named effects:
+Use `Effect.fn` with generator functions for traced, named effects. `Effect.fn` automatically creates a span with the provided name:
 
 ```typescript
 import { Effect } from "effect"
@@ -52,6 +52,8 @@ const processUser = Effect.fn("processUser")(function* (userId: string) {
 
 **Benefits:**
 
-- Named spans for tracing/debugging
+- Automatically creates named spans for tracing/debugging
 - Stack traces with location details
 - Clean signatures
+
+**Note:** Since `Effect.fn` automatically creates a span, use `Effect.gen` when you need to add custom spans inside the function (e.g., with `Effect.withSpan`).

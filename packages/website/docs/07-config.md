@@ -1,10 +1,10 @@
 ---
-title: Configuration
+title: Config
 description: "Effect Config usage, providers, and layer patterns"
 order: 7
 ---
 
-# Configuration
+# Config
 
 Effect's `Config` module provides type-safe configuration loading with validation, defaults, and transformations.
 
@@ -159,13 +159,59 @@ const program = Effect.gen(function* () {
 })
 ```
 
-## Validation and Transformation
+## Validation with Schema
+
+**Recommended:** Use `Schema.Config` for validation instead of `Config.mapOrFail`:
+
+```typescript
+import { Config, Effect, Schema } from "effect"
+
+// Define schemas with built-in validation
+const Port = Schema.Int.pipe(Schema.between(1, 65535))
+const Environment = Schema.Literal("development", "staging", "production")
+
+const program = Effect.gen(function* () {
+  // Schema handles validation automatically
+  const port = yield* Schema.Config("PORT", Port)
+  const env = yield* Schema.Config("ENV", Environment)
+
+  return { port, env }
+})
+```
+
+**Schema.Config benefits:**
+
+- Automatic type inference from schema
+- Rich validation errors with schema messages
+- Reusable schemas across config and runtime validation
+- Full Schema transformation power (brands, transforms, refinements)
+
+**Example with branded types:**
+
+```typescript
+import { Effect, Schema } from "effect"
+
+const Port = Schema.Int.pipe(
+  Schema.between(1, 65535),
+  Schema.brand("Port")
+)
+type Port = typeof Port.Type
+
+const program = Effect.gen(function* () {
+  const port = yield* Schema.Config("PORT", Port)
+  // port is branded as Port, preventing misuse
+  return port
+})
+```
+
+## Manual Validation (Alternative)
+
+You can use `Config.mapOrFail` if you need custom validation without Schema:
 
 ```typescript
 import { Config, ConfigError, Effect } from "effect"
 
 const program = Effect.gen(function* () {
-  // Validate with mapOrFail
   const port = yield* Config.integer("PORT").pipe(
     Config.mapOrFail((p) =>
       p > 0 && p < 65536
@@ -174,12 +220,7 @@ const program = Effect.gen(function* () {
     )
   )
 
-  // Transform values
-  const uppercased = yield* Config.string("ENV").pipe(
-    Config.map((s) => s.toUpperCase())
-  )
-
-  return { port, uppercased }
+  return port
 })
 ```
 
@@ -218,43 +259,67 @@ Effect.runPromise(program.pipe(Effect.provide(TestConfigLayer)))
 
 ## Usage in Tests
 
-Combine provider overrides with dedicated test layers for your config services:
+**Best practice:** Just provide a layer with test values directly. No need for `ConfigProvider.fromMap`:
 
 ```typescript
-import { Config, ConfigProvider, Context, Effect, Layer, Redacted } from "effect"
+import { Config, Context, Effect, Layer, Redacted } from "effect"
 
-class ApiConfig extends Context.Tag("@app/ApiConfig")<ApiConfig, { apiKey: Redacted.Redacted }>() {
+class ApiConfig extends Context.Tag("@app/ApiConfig")<
+  ApiConfig,
+  {
+    readonly apiKey: Redacted.Redacted
+    readonly baseUrl: string
+  }
+>() {
   static readonly layer = Layer.effect(
     ApiConfig,
     Effect.gen(function* () {
       const apiKey = yield* Config.redacted("API_KEY")
-      return ApiConfig.of({ apiKey })
+      const baseUrl = yield* Config.string("API_BASE_URL")
+      return ApiConfig.of({ apiKey, baseUrl })
     })
   )
-
-  static readonly testLayer = Layer.succeed(ApiConfig, ApiConfig.of({ apiKey: Redacted.make("test-key") }))
 }
-
-const TestConfigProvider = Layer.setConfigProvider(
-  ConfigProvider.fromMap(new Map([["API_KEY", "test-key"]]))
-)
 
 const program = Effect.gen(function* () {
   const config = yield* ApiConfig
-  // Use config...
+  console.log(config.baseUrl)
 })
 
-// Production
+// Production: reads from environment variables
 Effect.runPromise(program.pipe(Effect.provide(ApiConfig.layer)))
 
-// Tests - override the provider + use the testLayer for dependencies
+// Tests: inline test values as needed
 Effect.runPromise(
   program.pipe(
-    Effect.provide(TestConfigProvider),
-    Effect.provide(ApiConfig.testLayer)
+    Effect.provide(
+      Layer.succeed(ApiConfig, {
+        apiKey: Redacted.make("test-key"),
+        baseUrl: "https://test.example.com"
+      })
+    )
+  )
+)
+
+// Different test with different values
+Effect.runPromise(
+  program.pipe(
+    Effect.provide(
+      Layer.succeed(ApiConfig, {
+        apiKey: Redacted.make("another-key"),
+        baseUrl: "https://staging.example.com"
+      })
+    )
   )
 )
 ```
+
+**Why this works:**
+
+- Your production code depends on `ApiConfig` service, not on `Config` primitives
+- In tests, provide values directly with `Layer.succeed()`
+- No need to mock environment variables or config providers
+- Each test can use different values without predefined test layers
 
 ## Using Redacted for Secrets
 
@@ -290,7 +355,9 @@ const program = Effect.gen(function* () {
 ## Example: Database Config Layer
 
 ```typescript
-import { Config, ConfigError, Context, Effect, Layer, Redacted } from "effect"
+import { Context, Effect, Layer, Redacted, Schema } from "effect"
+
+const Port = Schema.Int.pipe(Schema.between(1, 65535))
 
 class DatabaseConfig extends Context.Tag("@app/DatabaseConfig")<
   DatabaseConfig,
@@ -304,16 +371,10 @@ class DatabaseConfig extends Context.Tag("@app/DatabaseConfig")<
   static readonly layer = Layer.effect(
     DatabaseConfig,
     Effect.gen(function* () {
-      const host = yield* Config.string("DB_HOST")
-      const port = yield* Config.integer("DB_PORT").pipe(
-        Config.mapOrFail((p) =>
-          p > 0 && p < 65536
-            ? Effect.succeed(p)
-            : Effect.fail(ConfigError.InvalidData([], "Invalid port"))
-        )
-      )
-      const database = yield* Config.string("DB_NAME")
-      const password = yield* Config.redacted("DB_PASSWORD")
+      const host = yield* Schema.Config("DB_HOST", Schema.String)
+      const port = yield* Schema.Config("DB_PORT", Port)
+      const database = yield* Schema.Config("DB_NAME", Schema.String)
+      const password = yield* Schema.Config("DB_PASSWORD", Schema.Redacted(Schema.String))
 
       return DatabaseConfig.of({ host, port, database, password })
     })

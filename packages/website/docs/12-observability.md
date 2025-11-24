@@ -54,11 +54,15 @@ Effect.runPromise(
 ```typescript
 import { Effect } from "effect"
 
-const fetchUser = (id: string) =>
-  Effect.gen(function* () {
-    yield* Effect.sleep("50 millis").pipe(Effect.withSpan("db.lookup"))
-    return { id }
-  }).pipe(Effect.withSpan("fetchUser", { attributes: { id } }))
+const performDbLookup = Effect.gen(function* () {
+  yield* Effect.sleep("50 millis").pipe(Effect.withSpan("db.lookup"))
+  return { data: "result" }
+})
+
+const fetchData = Effect.fn("fetchData")(function* () {
+  yield* Effect.log("Fetching data")
+  return yield* performDbLookup
+})
 ```
 
 Span attributes show up in your tracing backend, making it easy to aggregate latency per service or per customer.

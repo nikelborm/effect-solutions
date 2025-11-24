@@ -83,15 +83,13 @@ class Users extends Context.Tag("@app/Users")<
       const analytics = yield* Analytics
 
       // 2. define the service methods
-      const findById = (id: string) =>
-        Effect.gen(function* () {
-          yield* analytics.track("user.find", { id })
-          const response = yield* http.get(`https://api.example.com/users/${id}`)
-          return yield* HttpClientResponse.schemaBodyJson(User)(response)
-        }).pipe(
-          Effect.mapError(() => new Error("Failed to fetch user")),
-          Effect.withSpan("Users.findById")
-        )
+      const findById = Effect.fn("Users.findById")(function* (id: string) {
+        yield* analytics.track("user.find", { id })
+        const response = yield* http.get(`https://api.example.com/users/${id}`)
+        return yield* HttpClientResponse.schemaBodyJson(User)(response)
+      }).pipe(
+        Effect.mapError(() => new Error("Failed to fetch user"))
+      )
 
       // 3. return the service
       return Users.of({ findById })
@@ -159,15 +157,14 @@ class UserService extends Context.Tag("@app/UserService")<
       const cache = yield* Cache
       const logger = yield* Logger
 
-      const getUser = (id: string) =>
-        Effect.gen(function* () {
-          yield* logger.log(`Fetching user ${id}`)
-          const cached = yield* cache.get(`user:${id}`)
-          if (cached) return JSON.parse(cached)
+      const getUser = Effect.fn("UserService.getUser")(function* (id: string) {
+        yield* logger.log(`Fetching user ${id}`)
+        const cached = yield* cache.get(`user:${id}`)
+        if (cached) return JSON.parse(cached)
 
-          const result = yield* db.query(`SELECT * FROM users WHERE id = ?`)
-          return result[0]
-        }).pipe(Effect.withSpan("UserService.getUser"))
+        const result = yield* db.query(`SELECT * FROM users WHERE id = ?`)
+        return result[0]
+      })
 
       return UserService.of({ getUser })
     })
@@ -317,16 +314,15 @@ export class ApiClient extends Context.Tag("@app/ApiClient")<
     Effect.gen(function* () {
       const config = yield* AppConfig
 
-      const fetch = (path: string) =>
-        Effect.gen(function* () {
-          const url = `${config.apiUrl}${path}`
-          yield* Effect.log(
-            `Fetching ${url} (timeout: ${
-              config.timeout
-            }ms, token: ${Redacted.value(config.token)})`
-          )
-          return `Response from ${url}`
-        }).pipe(Effect.withSpan("ApiClient.fetch"))
+      const fetch = Effect.fn("ApiClient.fetch")(function* (path: string) {
+        const url = `${config.apiUrl}${path}`
+        yield* Effect.log(
+          `Fetching ${url} (timeout: ${
+            config.timeout
+          }ms, token: ${Redacted.value(config.token)})`
+        )
+        return `Response from ${url}`
+      })
 
       return ApiClient.of({ fetch })
     })
