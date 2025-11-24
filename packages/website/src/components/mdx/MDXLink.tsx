@@ -8,6 +8,7 @@ import Link from "next/link";
 import type { AnchorHTMLAttributes, MouseEventHandler, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { useLessonNavSfx } from "@/lib/useLessonNavSfx";
+import { ArrowUpRightIcon } from "@phosphor-icons/react";
 
 interface MDXLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href?: string;
@@ -22,10 +23,10 @@ export function MDXLink(props: MDXLinkProps) {
     (href?.startsWith("/") && !href.startsWith("//")) || href?.startsWith("./");
   const isExternal =
     href?.startsWith("http://") || href?.startsWith("https://");
-  const iconClassName = "text-blue-400/60 font-bold";
+  const iconClassName = "text-blue-400/70 group-hover:text-blue-300/70 font-bold";
 
   const linkClassName = cn(
-    "text-blue-400 hover:text-blue-300 no-underline cursor-pointer inline-flex items-center gap-1",
+    "group text-blue-400 hover:text-blue-300 no-underline cursor-pointer inline-flex items-center gap-1",
     className,
   );
 
@@ -48,7 +49,7 @@ export function MDXLink(props: MDXLinkProps) {
         onClick={handleClick}
       >
         {children}
-        <ArrowRightIcon size={16} weight="bold" className={iconClassName} />
+        <ArrowRightIcon size={18} weight="bold" className={iconClassName} />
       </Link>
     );
   }
@@ -64,7 +65,7 @@ export function MDXLink(props: MDXLinkProps) {
     >
       {children}
       {isExternal && (
-        <ArrowSquareOutIcon size={16} weight="bold" className={iconClassName} />
+        <ArrowUpRightIcon size={18} weight="bold" className={iconClassName} />
       )}
     </a>
   );

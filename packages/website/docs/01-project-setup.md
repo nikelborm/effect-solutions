@@ -14,7 +14,7 @@ For a well-configured Effect project, install the Effect Language Service and se
 
 ## Effect Language Service
 
-The Effect Language Service provides editor diagnostics and compile-time type checking. This guide covers installation and setup.
+The [Effect Language Service](https://github.com/Effect-TS/language-service) provides editor diagnostics and compile-time type checking. This guide covers installation and setup.
 
 ### Installation
 
@@ -70,8 +70,6 @@ Add to `package.json` to persist across installs:
 }
 ```
 
-**Full guide:** [Effect Language Service](https://github.com/Effect-TS/language-service)
-
 ## Effect Solutions CLI
 
 Access Effect Solutions documentation directly from the command line:
@@ -108,7 +106,9 @@ Once cloned, add a reference in `CLAUDE.md` or `AGENTS.md`:
 ```markdown
 ## Local Effect Source
 
-The Effect repository is cloned to `~/code/opensource/effect` for reference. Use this to explore APIs, find usage examples, and understand implementation details when the documentation isn't enough.
+The Effect repository is cloned to `~/code/opensource/effect` for reference. 
+Use this to explore APIs, find usage examples, and understand implementation 
+details when the documentation isn't enough.
 ```
 
 Your agent can now search the actual Effect source code for implementation patterns, API usage examples, and detailed type definitions.
@@ -118,6 +118,3 @@ Your agent can now search the actual Effect source code for implementation patte
 Effect projects benefit from strict TypeScript configuration for safety and performance.
 
 **See:** [TypeScript Configuration Guide](./02-tsconfig.md)
-
-Reference configuration from Effect v4:
-[effect-smol tsconfig.base.jsonc](https://github.com/Effect-TS/effect-smol/blob/main/tsconfig.base.jsonc)
