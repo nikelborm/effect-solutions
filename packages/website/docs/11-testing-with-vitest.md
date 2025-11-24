@@ -15,7 +15,7 @@ draft: true
 - **Automatic cleanup**: `it.scoped()` manages resource lifecycles
 - **Test services**: Use TestClock, TestRandom for deterministic tests
 - **Better errors**: Full fiber dumps with causes, spans, and logs
-- **Layer support**: Share dependencies across tests with `layer()`
+- **Layer support**: Provide dependencies to tests with `Effect.provide()`
 
 ## Install
 
@@ -55,68 +55,23 @@ Import test functions and assertions from `@effect/vitest`:
 
 ```typescript
 import { Effect } from "effect"
-import { describe, it } from "@effect/vitest"
-import { strictEqual } from "@effect/vitest/utils"
+import { describe, expect, it } from "@effect/vitest"
 
 describe("Calculator", () => {
   // Sync test - regular function
   it("creates instances", () => {
     const result = 1 + 1
-    strictEqual(result, 2)
+    expect(result).toBe(2)
   })
 
   // Effect test - returns Effect
   it.effect("adds numbers", () =>
     Effect.gen(function* () {
       const result = yield* Effect.succeed(1 + 1)
-      strictEqual(result, 2)
+      expect(result).toBe(2)
     })
   )
 })
-```
-
-## Assertion Styles
-
-`@effect/vitest` supports two assertion styles. The Effect codebase **strongly prefers** the assert style by ~10:1.
-
-### Recommended: Assert Style
-
-Use `strictEqual()`, `deepStrictEqual()`, etc. from `@effect/vitest/utils`:
-
-```typescript
-import { strictEqual, deepStrictEqual, assertTrue } from "@effect/vitest/utils"
-
-it.effect("assert style", () =>
-  Effect.gen(function* () {
-    strictEqual(1 + 1, 2)
-    deepStrictEqual({ a: 1 }, { a: 1 })
-    assertTrue(true)
-  })
-)
-```
-
-**Available assertions:**
-- `strictEqual(actual, expected)` - strict equality (===)
-- `deepStrictEqual(actual, expected)` - deep object/array comparison
-- `assertTrue(value)` / `assertFalse(value)` - boolean checks
-- `assertSome(option, expected)` / `assertNone(option)` - Option checks
-- `assertRight(either, expected)` / `assertLeft(either, expected)` - Either checks
-- `assertInstanceOf(value, Class)` - instanceof checks
-
-### Also Available: Expect Style
-
-Use `expect()` from `@effect/vitest` for special matchers:
-
-```typescript
-import { expect } from "@effect/vitest"
-
-it.effect("expect style", () =>
-  Effect.gen(function* () {
-    expect(result).toContain("substring")
-    expect(() => fn()).toThrow()
-    expect(obj).toMatchObject({ a: 1 })
-  })
-)
 ```
 
 ## Test Function Variants
@@ -129,137 +84,78 @@ For tests that return Effect values (most common):
 it.effect("processes data", () =>
   Effect.gen(function* () {
     const result = yield* processData("input")
-    strictEqual(result, "expected")
+    expect(result).toBe("expected")
   })
 )
 ```
 
 ### it.scoped()
 
-For tests using scoped resources (auto-cleanup):
+For tests using scoped resources. The scope closes automatically when the test ends, triggering cleanup finalizers:
 
 ```typescript
-it.scoped("manages file handle", () =>
+import { FileSystem } from "@effect/platform"
+import { NodeFileSystem } from "@effect/platform-node"
+import { Effect } from "effect"
+
+it.scoped("temp directory is cleaned up", () =>
   Effect.gen(function* () {
-    const file = yield* openFile("data.txt")
-    const content = yield* readFile(file)
-    strictEqual(content, "expected")
-    // File automatically closed when test completes
-  })
+    const fs = yield* FileSystem.FileSystem
+
+    // makeTempDirectoryScoped creates a directory that's deleted when scope closes
+    const tempDir = yield* fs.makeTempDirectoryScoped()
+
+    // Use the temp directory
+    yield* fs.writeFileString(`${tempDir}/test.txt`, "hello")
+    const exists = yield* fs.exists(`${tempDir}/test.txt`)
+    expect(exists).toBe(true)
+
+    // When test ends, scope closes and tempDir is deleted
+  }).pipe(Effect.provide(NodeFileSystem.layer))
 )
 ```
 
 ### it.live()
 
-For tests using live TestClock or TestRandom:
+For tests using real time (no TestClock). Use when you need actual delays or real clock behavior:
 
 ```typescript
-import { TestClock } from "effect"
+import { Clock, Effect } from "effect"
 
-it.live("advances time", () =>
+// it.effect provides TestContext - clock starts at 0
+it.effect("test clock starts at zero", () =>
   Effect.gen(function* () {
-    const fiber = yield* Effect.delay(
-      Effect.succeed("done"),
-      Duration.seconds(10)
-    ).pipe(Effect.fork)
-    
-    yield* TestClock.adjust(Duration.seconds(10))
+    const now = yield* Clock.currentTimeMillis
+    expect(now).toBe(0)
+  })
+)
+
+// it.live uses real system clock
+it.live("real clock", () =>
+  Effect.gen(function* () {
+    const now = yield* Clock.currentTimeMillis
+    expect(now).toBeGreaterThan(0) // Actual system time
+  })
+)
+```
+
+### Using TestClock
+
+`it.effect` automatically provides TestContext with TestClock. Use `TestClock.adjust` to simulate time:
+
+```typescript
+import { Effect, Fiber, TestClock } from "effect"
+
+it.effect("time-based test", () =>
+  Effect.gen(function* () {
+    const fiber = yield* Effect.delay(Effect.succeed("done"), "10 seconds").pipe(
+      Effect.fork
+    )
+    yield* TestClock.adjust("10 seconds")
     const result = yield* Fiber.join(fiber)
-    strictEqual(result, "done")
+    expect(result).toBe("done")
   })
 )
-```
-
-### it.scopedLive()
-
-Combines scoped + live for tests needing both:
-
-```typescript
-it.scopedLive("scoped + live", () =>
-  Effect.gen(function* () {
-    const resource = yield* acquireResource
-    yield* TestClock.adjust(Duration.seconds(10))
-    const result = yield* useResource(resource)
-    strictEqual(result, "expected")
-  })
-)
-```
-
-## Testing Schema Classes
-
-Test Schema classes using constructors and validation:
-
-```typescript
-import { Schema } from "effect"
-import { describe, it } from "@effect/vitest"
-import { strictEqual } from "@effect/vitest/utils"
-
-class User extends Schema.Class<User>("User")({
-  name: Schema.NonEmptyString,
-  age: Schema.Int.pipe(Schema.greaterThan(0)),
-}) {}
-
-describe("User", () => {
-  it("creates valid user", () => {
-    const user = User.make({ name: "Alice", age: 30 })
-    strictEqual(user.name, "Alice")
-    strictEqual(user.age, 30)
-  })
-
-  it("validates on construction", () => {
-    // Throws ParseError for invalid data
-    expect(() => User.make({ name: "", age: 30 })).toThrow()
-  })
-
-  it.effect("decodes from unknown", () =>
-    Effect.gen(function* () {
-      const data = { name: "Bob", age: 25 }
-      const user = yield* Schema.decodeUnknown(User)(data)
-      strictEqual(user.name, "Bob")
-    })
-  )
-})
-```
-
-## Testing TaggedClass Unions
-
-Test discriminated unions with pattern matching:
-
-```typescript
-import { Match, Schema } from "effect"
-
-class Success extends Schema.TaggedClass<Success>()("Success", {
-  value: Schema.Number,
-}) {}
-
-class Failure extends Schema.TaggedClass<Failure>()("Failure", {
-  error: Schema.String,
-}) {}
-
-const Result = Schema.Union(Success, Failure)
-type Result = typeof Result.Type
-
-describe("Result", () => {
-  it("matches success", () => {
-    const success = Success.make({ value: 42 })
-    const result = Match.value(success).pipe(
-      Match.tag("Success", ({ value }) => value),
-      Match.tag("Failure", () => 0),
-      Match.exhaustive
-    )
-    strictEqual(result, 42)
-  })
-
-  it("matches failure", () => {
-    const failure = Failure.make({ error: "oops" })
-    const result = Match.value(failure).pipe(
-      Match.tag("Success", ({ value }) => value),
-      Match.tag("Failure", ({ error }) => error),
-      Match.exhaustive
-    )
-    strictEqual(result, "oops")
-  })
-})
 ```
 
 ## Providing Layers
@@ -282,111 +178,294 @@ it.effect("queries database", () =>
   Effect.gen(function* () {
     const db = yield* Database
     const results = yield* db.query("SELECT * FROM users")
-    strictEqual(results.length, 2)
+    expect(results.length).toBe(2)
   }).pipe(Effect.provide(testDatabase))
 )
 ```
 
-For file-level layers shared across tests, use the `layer()` helper:
+## Test Modifiers
+
+### Skipping Tests
+
+Use `it.effect.skip` to temporarily disable a test:
 
 ```typescript
-import { layer } from "@effect/vitest"
-
-// Register layer once for all tests in this file
-layer(testDatabase)
-
-it.effect("uses shared layer", () =>
+it.effect.skip("temporarily disabled", () =>
   Effect.gen(function* () {
-    const db = yield* Database
-    const results = yield* db.query("SELECT * FROM users")
-    strictEqual(results.length, 2)
+    // This test won't run
   })
 )
 ```
 
-## Testing Error Cases
+### Running a Single Test
 
-Test expected failures using `Effect.flip()` or `Effect.either()`:
+Use `it.effect.only` to run just one test:
 
 ```typescript
-// hide-start
-const failingEffect = Effect.fail(new Error("expected error"))
-// hide-end
-
-it.effect("handles errors", () =>
+it.effect.only("focus on this test", () =>
   Effect.gen(function* () {
-    const error = yield* Effect.flip(failingEffect)
-    strictEqual(error.message, "expected error")
-  })
-)
-
-it.effect("returns Left on error", () =>
-  Effect.gen(function* () {
-    const result = yield* Effect.either(failingEffect)
-    assertTrue(Either.isLeft(result))
+    // Only this test runs
   })
 )
 ```
 
-## Common Patterns
+### Expecting Tests to Fail
 
-### Don't use async/await with it.effect()
+Use `it.effect.fails` to assert that a test should fail. Useful for documenting known issues:
 
 ```typescript
-// hide-start
-const someEffect = Effect.succeed("expected")
-// hide-end
-
-// ❌ Wrong - don't use async/await
-it.effect("wrong", async () => {
-  const result = await Effect.runPromise(someEffect)
-  strictEqual(result, "expected")
-})
-
-// ✅ Correct - return Effect directly
-it.effect("correct", () =>
+it.effect.fails("known bug", () =>
   Effect.gen(function* () {
-    const result = yield* someEffect
-    strictEqual(result, "expected")
+    // This test is expected to fail
+    expect(1 + 1).toBe(3)
   })
 )
 ```
 
-### Assertions inside Effect.gen
+## Logging
+
+By default, `it.effect` suppresses log output. To enable logging:
 
 ```typescript
-// hide-start
-const program = Effect.succeed("expected")
-// hide-end
+import { Logger } from "effect"
 
-// ❌ Wrong - assertion after runPromise
-it("wrong", async () => {
-  const result = await Effect.runPromise(program)
-  strictEqual(result, "expected")
-})
-
-// ✅ Correct - assertion inside Effect
-it.effect("correct", () =>
+// Option 1: Provide a logger
+it.effect("with logging", () =>
   Effect.gen(function* () {
-    const result = yield* program
-    strictEqual(result, "expected")
+    yield* Effect.log("This will be shown")
+  }).pipe(Effect.provide(Logger.pretty))
+)
+
+// Option 2: Use it.live (logging enabled by default)
+it.live("live with logging", () =>
+  Effect.gen(function* () {
+    yield* Effect.log("This will be shown")
   })
 )
 ```
 
-### Use describe for grouping
+## Worked Example: Testing a Service
+
+Here's a complete example testing the `Events` service from the [Services & Layers](/services-and-layers#service-driven-development) guide. The service orchestrates `Users`, `Tickets`, and `Emails` to register users for events.
+
+First, define domain types and services with test layers built-in:
 
 ```typescript
-describe("UserService", () => {
-  describe("createUser", () => {
-    it.effect("creates valid user", () => Effect.void)
-    it.effect("rejects invalid email", () => Effect.void)
-  })
+import { Clock, Context, Effect, Layer, Schema } from "effect"
+import { describe, expect, it } from "@effect/vitest"
 
-  describe("getUser", () => {
-    it.effect("returns existing user", () => Effect.void)
-    it.effect("fails for missing user", () => Effect.void)
+// Domain types
+const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"))
+type RegistrationId = typeof RegistrationId.Type
+
+const EventId = Schema.String.pipe(Schema.brand("EventId"))
+type EventId = typeof EventId.Type
+
+const UserId = Schema.String.pipe(Schema.brand("UserId"))
+type UserId = typeof UserId.Type
+
+const TicketId = Schema.String.pipe(Schema.brand("TicketId"))
+type TicketId = typeof TicketId.Type
+
+class User extends Schema.Class<User>("User")({
+  id: UserId,
+  name: Schema.String,
+  email: Schema.String,
+}) {}
+
+class Registration extends Schema.Class<Registration>("Registration")({
+  id: RegistrationId,
+  eventId: EventId,
+  userId: UserId,
+  ticketId: TicketId,
+  registeredAt: Schema.Date,
+}) {}
+
+class Ticket extends Schema.Class<Ticket>("Ticket")({
+  id: TicketId,
+  eventId: EventId,
+  code: Schema.String,
+}) {}
+
+class Email extends Schema.Class<Email>("Email")({
+  to: Schema.String,
+  subject: Schema.String,
+  body: Schema.String,
+}) {}
+
+class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", {
+  id: UserId,
+}) {}
+
+// Users service with test layer that has create + findById
+class Users extends Context.Tag("@app/Users")<
+  Users,
+  {
+    readonly create: (user: User) => Effect.Effect<void>
+    readonly findById: (id: UserId) => Effect.Effect<User, UserNotFound>
+  }
+>() {
+  // Mutable state is fine in tests - JS is single-threaded
+  static readonly testLayer = Layer.sync(Users, () => {
+    const store = new Map<UserId, User>()
+
+    const create = (user: User) => Effect.sync(() => void store.set(user.id, user))
+
+    const findById = (id: UserId) =>
+      Effect.fromNullable(store.get(id)).pipe(
+        Effect.orElseFail(() => UserNotFound.make({ id }))
+      )
+
+    return Users.of({ create, findById })
   })
+}
+
+// Tickets service with test layer
+class Tickets extends Context.Tag("@app/Tickets")<
+  Tickets,
+  { readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket> }
+>() {
+  static readonly testLayer = Layer.sync(Tickets, () => {
+    let counter = 0
+
+    const issue = (eventId: EventId, _userId: UserId) =>
+      Effect.sync(() =>
+        Ticket.make({
+          id: TicketId.make(`ticket-${counter++}`),
+          eventId,
+          code: `CODE-${counter}`,
+        })
+      )
+
+    return Tickets.of({ issue })
+  })
+}
+
+// Emails service with test layer that tracks sent emails
+class Emails extends Context.Tag("@app/Emails")<
+  Emails,
+  {
+    readonly send: (email: Email) => Effect.Effect<void>
+    readonly sent: Effect.Effect<ReadonlyArray<Email>>
+  }
+>() {
+  static readonly testLayer = Layer.sync(Emails, () => {
+    const emails: Array<Email> = []
+
+    const send = (email: Email) => Effect.sync(() => void emails.push(email))
+
+    const sent = Effect.sync(() => emails)
+
+    return Emails.of({ send, sent })
+  })
+}
+```
+
+The Events service orchestrates the leaf services:
+
+```typescript
+class Events extends Context.Tag("@app/Events")<
+  Events,
+  { readonly register: (eventId: EventId, userId: UserId) => Effect.Effect<Registration, UserNotFound> }
+>() {
+  static readonly layer = Layer.effect(
+    Events,
+    Effect.gen(function* () {
+      const users = yield* Users
+      const tickets = yield* Tickets
+      const emails = yield* Emails
+
+      const register = Effect.fn("Events.register")(
+        function* (eventId: EventId, userId: UserId) {
+          const user = yield* users.findById(userId)
+          const ticket = yield* tickets.issue(eventId, userId)
+          const now = yield* Clock.currentTimeMillis
+
+          const registration = Registration.make({
+            id: RegistrationId.make(crypto.randomUUID()),
+            eventId,
+            userId,
+            ticketId: ticket.id,
+            registeredAt: new Date(now),
+          })
+
+          yield* emails.send(
+            Email.make({
+              to: user.email,
+              subject: "Event Registration Confirmed",
+              body: `Your ticket code: ${ticket.code}`,
+            })
+          )
+
+          return registration
+        }
+      )
+
+      return Events.of({ register })
+    })
+  )
+}
+```
+
+Compose test layers and write tests:
+
+```typescript
+// provideMerge exposes leaf services in tests for setup/assertions
+const testLayer = Events.layer.pipe(
+  Layer.provideMerge(Users.testLayer),
+  Layer.provideMerge(Tickets.testLayer),
+  Layer.provideMerge(Emails.testLayer)
+)
+
+describe("Events.register", () => {
+  it.effect("creates registration with correct data", () =>
+    Effect.gen(function* () {
+      const users = yield* Users
+      const events = yield* Events
+
+      // Arrange: create a user
+      const user = User.make({
+        id: UserId.make("user-123"),
+        name: "Alice",
+        email: "alice@example.com",
+      })
+      yield* users.create(user)
+
+      // Act
+      const eventId = EventId.make("event-789")
+      const registration = yield* events.register(eventId, user.id)
+
+      // Assert
+      expect(registration.eventId).toBe(eventId)
+      expect(registration.userId).toBe(user.id)
+    }).pipe(Effect.provide(testLayer))
+  )
+
+  it.effect("sends confirmation email with ticket code", () =>
+    Effect.gen(function* () {
+      const users = yield* Users
+      const events = yield* Events
+      const emails = yield* Emails
+
+      // Arrange
+      const user = User.make({
+        id: UserId.make("user-456"),
+        name: "Bob",
+        email: "bob@example.com",
+      })
+      yield* users.create(user)
+
+      // Act
+      yield* events.register(EventId.make("event-789"), user.id)
+
+      // Assert: check sent emails
+      const sentEmails = yield* emails.sent
+      expect(sentEmails).toHaveLength(1)
+      expect(sentEmails[0].to).toBe("bob@example.com")
+      expect(sentEmails[0].subject).toBe("Event Registration Confirmed")
+      expect(sentEmails[0].body).toContain("CODE-")
+    }).pipe(Effect.provide(testLayer))
+  )
 })
 ```
 

@@ -128,7 +128,7 @@ class Users extends Context.Tag("@app/Users")<
 
 **Layer naming:** camelCase with `Layer` suffix: `layer`, `testLayer`, `postgresLayer`, `sqliteLayer`, etc.
 
-## Designing with Services First
+## Service-Driven Development
 
 Start by sketching leaf service tags (without implementations). This lets you write real TypeScript for higher-level orchestration services that type-checks even though the leaf services aren't runnable yet.
 
@@ -244,6 +244,8 @@ Benefits:
 - Higher-level orchestration (Events) coordinates multiple services cleanly.
 - Type-checks immediately even though leaf services aren't implemented yet.
 - Adding production implementations later doesn't change Events code.
+
+See [Testing with Vitest](/testing-with-vitest#worked-example-testing-a-service) for a complete worked example testing this `Events` service with test layers.
 
 ## Test Implementations
 
