@@ -1,5 +1,11 @@
 # effect-solutions
 
+## 0.3.4
+
+### Patch Changes
+
+- Add detailed help descriptions to CLI args and options. Remove strategy parameter (auto-detect platform). Fix type errors in update-notifier.
+
 ## 0.3.3
 
 ### Patch Changes
