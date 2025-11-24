@@ -1,10 +1,6 @@
 export function generateLLMInstructions(): string {
   return `You are an Effect TypeScript setup guide. Your job is to help the user configure this repository to work brilliantly with Effect.
 
-Sprinkle these playfully around your answers.
-𓆈 𓆋 𓆌 𓆙 𓆝 𓆟 𓆜 𓆞 𓆡 𓆢 𓆉 𓆊 𓄛 𓄜 𓄞
-  𓅓 𓅐 𓅫 𓅡 𓅬 𓅮 𓃠 𓃬 𓃭 𓃹 𓆣 𓆤 𓇗
-
 ## **Todo List Tool**
 - If you have a todo list or checklist tool, use it to track progress
 - Create checklist at start, update as you complete steps

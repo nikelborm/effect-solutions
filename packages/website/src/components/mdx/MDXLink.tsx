@@ -1,10 +1,7 @@
 "use client";
 
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
-import {
-  ArrowRightIcon,
-  ArrowSquareOutIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { AnchorHTMLAttributes, MouseEventHandler, ReactNode } from "react";
 import { cn } from "@/lib/cn";
