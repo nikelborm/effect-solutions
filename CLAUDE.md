@@ -71,11 +71,31 @@ Files are processed by Next.js and rendered with MDX support. The slug becomes t
 ### Adding New Docs
 
 1. Create new file in `packages/website/docs/` with proper numbering
-2. Add frontmatter with title and description
+2. Add frontmatter with title, description, and optionally group
 3. **Create corresponding test file in `tests/`** - All code examples must have tests to ensure they're correct
 4. Run `bun --cwd packages/website run generate:og` to create social images
 5. Test locally with `bun run dev`
 6. Run `bun run test` to verify all examples work
+
+### Frontmatter Groups
+
+Docs are organized into groups on the homepage via the `group` frontmatter field:
+
+- **Setup**: Getting started guides (`group: Setup`)
+- **Core Patterns**: Default if unspecified (`group: Core Patterns`)
+- **Ecosystem**: @effect packages like cli, platform, rpc (`group: Ecosystem`)
+- **Drafts**: Shown in dev only when `draft: true` (overrides group)
+
+Valid values: `Setup`, `Core Patterns`, `Ecosystem`
+
+```yaml
+---
+title: Command-Line Interfaces
+description: "Build CLIs with @effect/cli"
+order: 13
+group: Ecosystem
+---
+```
 
 ### MDX Components
 
