@@ -1,60 +1,127 @@
 #!/usr/bin/env bun
 
-import { readdir } from "node:fs/promises"
-import { $ } from "bun"
+import { Command } from "@effect/cli"
+import { FileSystem } from "@effect/platform"
+import { BunContext, BunRuntime } from "@effect/platform-bun"
+import { Array, Effect, Option, pipe, String } from "effect"
 
-// Release script that handles everything:
-// 1. Generate OG images
-// 2. Generate CLI manifest
-// 3. Commit any uncommitted changes
-// 4. Run changeset version + tag
-// 5. Push with tags
+const exec = (cmd: string) =>
+  Effect.promise(() => Bun.$`sh -c ${cmd}`.text())
 
-async function hasChangesets(): Promise<boolean> {
-  const files = await readdir(".changeset")
+const execQuiet = (cmd: string) =>
+  Effect.promise(() => Bun.$`sh -c ${cmd}`.quiet().text())
+
+const hasChangesets = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem
+  const files = yield* fs.readDirectory(".changeset")
   return files.some((f) => f.endsWith(".md") && f !== "README.md")
-}
-
-async function run() {
-  // Check for changesets first
-  if (!(await hasChangesets())) {
-    console.log("⚠️  No changesets found. Create one with:")
-    console.log('   bun scripts/changeset-named.ts "description"')
-    process.exit(1)
-  }
-
-  console.log("📸 Generating OG images...")
-  await $`bun ./scripts/generate-og.ts`.cwd("packages/website")
-
-  console.log("\n📦 Generating CLI manifest...")
-  await $`bun ./scripts/generate-manifest.ts`.cwd("packages/cli")
-
-  // Check for uncommitted changes
-  const status = await $`git status --porcelain`.text()
-  if (status.trim()) {
-    console.log("\n📝 Committing generated files...")
-    await $`git add -A`
-    await $`git commit -m "Generate OG images and manifest"`
-  }
-
-  // Push commits so changelog plugin can fetch GitHub author info
-  console.log("\n⬆️  Pushing commits...")
-  await $`git push`
-
-  console.log("\n🔖 Running changeset version...")
-  const token = await $`gh auth token`.text()
-  await $`GITHUB_TOKEN=${token.trim()} bunx changeset version`
-
-  console.log("\n🏷️  Creating tags...")
-  await $`bunx changeset tag`
-
-  console.log("\n🚀 Pushing with tags...")
-  await $`git push --follow-tags`
-
-  console.log("\n✅ Release complete!")
-}
-
-run().catch((err) => {
-  console.error("❌ Release failed:", err.message)
-  process.exit(1)
 })
+
+const getChangedFiles = pipe(
+  execQuiet("git status --porcelain"),
+  Effect.map(String.trim),
+  Effect.map((s) => (s === "" ? [] : s.split("\n")))
+)
+
+const categorizeChanges = (files: string[]) => {
+  const ogImages = files.filter((f) => f.includes("public/og/"))
+  const manifest = files.filter((f) => f.includes("docs-manifest"))
+  const other = files.filter(
+    (f) => !f.includes("public/og/") && !f.includes("docs-manifest")
+  )
+  return { ogImages, manifest, other }
+}
+
+const formatCommitMessage = (changes: {
+  ogImages: string[]
+  manifest: string[]
+  other: string[]
+}) => {
+  const parts: string[] = []
+
+  if (changes.ogImages.length > 0) {
+    const count = changes.ogImages.length
+    parts.push(`${count} OG image${count > 1 ? "s" : ""}`)
+  }
+
+  if (changes.manifest.length > 0) {
+    parts.push("CLI manifest")
+  }
+
+  if (changes.other.length > 0) {
+    parts.push(`${changes.other.length} other file${changes.other.length > 1 ? "s" : ""}`)
+  }
+
+  return `Update generated files (${parts.join(", ")})`
+}
+
+const release = Command.make("release").pipe(
+  Command.withDescription("Generate assets, version, and publish"),
+  Command.withHandler(() =>
+    Effect.gen(function* () {
+      // Check for changesets first
+      const hasChanges = yield* hasChangesets
+      if (!hasChanges) {
+        yield* Effect.log("⚠️  No changesets found. Create one with:")
+        yield* Effect.log('   bun scripts/changeset-named.ts "description"')
+        return yield* Effect.fail(new Error("No changesets"))
+      }
+
+      // Generate OG images
+      yield* Effect.log("📸 Generating OG images...")
+      yield* exec("cd packages/website && bun ./scripts/generate-og.ts")
+
+      // Generate manifest
+      yield* Effect.log("📦 Generating CLI manifest...")
+      yield* exec("cd packages/cli && bun ./scripts/generate-manifest.ts")
+
+      // Check for changes and commit with descriptive message
+      const changedFiles = yield* getChangedFiles
+      if (changedFiles.length > 0) {
+        const changes = categorizeChanges(changedFiles)
+        const message = formatCommitMessage(changes)
+
+        yield* Effect.log(`📝 Committing: ${message}`)
+        yield* exec("git add -A")
+        yield* exec(`git commit -m "${message}"`)
+      } else {
+        yield* Effect.log("✓ No generated files changed")
+      }
+
+      // Push so changelog plugin can fetch GitHub info
+      yield* Effect.log("⬆️  Pushing commits...")
+      yield* exec("git push")
+
+      // Version with GitHub token for changelog
+      yield* Effect.log("🔖 Running changeset version...")
+      const token = yield* execQuiet("gh auth token").pipe(Effect.map(String.trim))
+      yield* exec(`GITHUB_TOKEN=${token} bunx changeset version`)
+
+      // Tag
+      yield* Effect.log("🏷️  Creating tags...")
+      const tagOutput = yield* exec("bunx changeset tag")
+      const tagMatch = tagOutput.match(/New tag:\s+(\S+)/)
+      const tag = pipe(
+        Option.fromNullable(tagMatch?.[1]),
+        Option.getOrElse(() => "unknown")
+      )
+
+      // Push with tags
+      yield* Effect.log("🚀 Pushing with tags...")
+      yield* exec("git push --follow-tags")
+
+      yield* Effect.log(`✅ Released ${tag}`)
+    })
+  )
+)
+
+const run = Command.run(release, {
+  name: "release",
+  version: "0.0.0",
+})
+
+pipe(
+  run(process.argv),
+  Effect.provide(BunContext.layer),
+  BunRuntime.runMain
+)
