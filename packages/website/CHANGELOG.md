@@ -1,5 +1,13 @@
 # @effect-best-practices/website
 
+## 0.4.16
+
+### Patch Changes
+
+- [`b8d8b07`](https://github.com/kitlangton/effect-solutions/commit/b8d8b077a37da74bf5c8517217711dc7584b2a90) Thanks [@kitlangton](https://github.com/kitlangton)! - fix terminal error rendering and add colors
+
+- [`fa52619`](https://github.com/kitlangton/effect-solutions/commit/fa52619e932f2d103b0fb3fd2752d0269a141ef4) Thanks [@kitlangton](https://github.com/kitlangton)! - Refactor TerminalDemo component into a subfolder with extracted domain, services, and commands.
+
 ## 0.4.15
 
 ### Patch Changes
