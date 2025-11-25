@@ -110,7 +110,9 @@ describe("06-error-handling", () => {
               HttpError.make({ statusCode: 404, message: "Not found" }),
             );
           }
-          return Effect.fail(ValidationError.make({ message: "Invalid input" }));
+          return Effect.fail(
+            ValidationError.make({ message: "Invalid input" }),
+          );
         };
 
         const recovered = (useHttp: boolean) =>

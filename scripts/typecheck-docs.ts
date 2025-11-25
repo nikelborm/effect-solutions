@@ -77,7 +77,9 @@ async function main() {
   // Write each block to its own module to avoid global name collisions
   await Promise.all(
     blocks.map((block) => {
-      const base = block.file.replace(/\.md$/, "").replace(/[^a-zA-Z0-9_-]/g, "-");
+      const base = block.file
+        .replace(/\.md$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "-");
       const filename = `${base}-block-${block.blockNumber
         .toString()
         .padStart(3, "0")}.ts`;
