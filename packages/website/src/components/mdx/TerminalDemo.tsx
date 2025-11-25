@@ -32,15 +32,17 @@ const nbsp = (str: string) => str.replace(/ /g, "\u00A0");
 function getAutocomplete(input: string, cursorAtEnd: boolean): string | null {
   if (!input || !cursorAtEnd) return null;
   const parts = input.split(" ");
-  const cmd = parts[0].toLowerCase();
+  const first = parts[0];
+  if (!first) return null;
+  const cmd = first.toLowerCase();
 
   if (parts.length === 1) {
     const match = COMMANDS.find((c) => c.startsWith(cmd) && c !== cmd);
     if (match) return match.slice(cmd.length);
   }
 
-  if (parts[0] === "list" && parts.length === 2) {
-    const flag = parts[1];
+  if (first === "list" && parts.length === 2) {
+    const flag = parts[1] ?? "";
     if ("--all".startsWith(flag) && flag !== "--all") {
       return "--all".slice(flag.length);
     }
@@ -121,7 +123,9 @@ Commands:
     }
 
     case "toggle": {
-      const id = Number.parseInt(rest[0], 10);
+      const idStr = rest[0];
+      if (!idStr) return { output: "Usage: tasks toggle <id>", isError: true };
+      const id = Number.parseInt(idStr, 10);
       if (Number.isNaN(id))
         return { output: "Usage: tasks toggle <id>", isError: true };
       const tasks = loadTasks();
@@ -409,7 +413,7 @@ export function TerminalDemo() {
         const newIndex = historyIndex + 1;
         if (newIndex < commandHistory.length) {
           setHistoryIndex(newIndex);
-          const cmd = commandHistory[commandHistory.length - 1 - newIndex];
+          const cmd = commandHistory[commandHistory.length - 1 - newIndex] ?? "";
           setInput(cmd);
           setCursorPos(cmd.length);
           setTimeout(() => inp.setSelectionRange(cmd.length, cmd.length), 0);
@@ -423,7 +427,7 @@ export function TerminalDemo() {
         const newIndex = historyIndex - 1;
         if (newIndex >= 0) {
           setHistoryIndex(newIndex);
-          const cmd = commandHistory[commandHistory.length - 1 - newIndex];
+          const cmd = commandHistory[commandHistory.length - 1 - newIndex] ?? "";
           setInput(cmd);
           setCursorPos(cmd.length);
           setTimeout(() => inp.setSelectionRange(cmd.length, cmd.length), 0);
