@@ -23,8 +23,12 @@ export function CommandPalette({
   }, [open]);
 
   // Scroll to top when search changes
+  // RAF ensures we run after cmdk's internal scroll-into-view logic
   useEffect(() => {
-    listRef.current?.scrollTo(0, 0);
+    const frame = requestAnimationFrame(() => {
+      listRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [search]);
 
   useEffect(() => {
