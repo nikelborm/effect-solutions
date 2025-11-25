@@ -17,7 +17,7 @@
     "generate:manifest": "bun --cwd packages/cli scripts/generate-manifest.ts",
     "changeset": "bun scripts/changeset-named.ts",
     "version": "changeset version && bun install",
-    "release": "bun run generate:manifest && GITHUB_TOKEN=$(gh auth token) changeset version && changeset tag && git push --follow-tags",
+    "release": "bun scripts/release.ts",
     "test": "bun run generate:manifest && bunx vitest run",
     "test:docs": "vitest run tests",
     "typecheck:docs": "bun scripts/typecheck-docs.ts",

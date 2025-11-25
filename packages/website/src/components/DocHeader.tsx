@@ -177,9 +177,8 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
     }
   }
 
-  const iconKey = isDocsListPage
-    ? "book"
-    : `${isHovered ? "arrow" : "book"}-${hoverAnimationId}`;
+  const iconKey =
+    isHovered && !isDocsListPage ? `arrow-${hoverAnimationId}` : "book";
 
   return (
     <header className="relative h-16 lg:sticky lg:top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur bottom-0 border-b border-neutral-800">
