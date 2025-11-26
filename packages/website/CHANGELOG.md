@@ -1,5 +1,11 @@
 # @effect-best-practices/website
 
+## 0.4.18
+
+### Patch Changes
+
+- [`a1286a6`](https://github.com/kitlangton/effect-solutions/commit/a1286a64029fd93c4722fda2f177706475fca1ae) Thanks [@kitlangton](https://github.com/kitlangton)! - Note that schema lives in `effect/Schema` and stop suggesting installing `@effect/schema`.
+
 ## 0.4.17
 
 ### Patch Changes
