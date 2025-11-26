@@ -129,7 +129,7 @@ bunx effect-solutions show <slug>   # Show specific topic
 bunx effect-solutions search <term> # Search topics
 ```
 
-Built with Effect CLI and Effect Schema. Tests in `packages/cli/src/cli.test.ts` validate all commands.
+Built with Effect CLI and Schema for validation (from `effect/Schema`). Tests in `packages/cli/src/cli.test.ts` validate all commands.
 
 ## Testing
 
@@ -193,7 +193,7 @@ Next.js app router with:
 Effect-based CLI using:
 
 - `@effect/cli` for command parsing
-- `@effect/schema` for validation
+- `effect/Schema` for validation
 - `@effect/platform` for file I/O
 - Embedded JSON docs bundle
 

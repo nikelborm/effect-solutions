@@ -56,6 +56,7 @@ Ask the user which mode they prefer:
   - Always: \`effect\`
   - CLI apps: \`@effect/cli\`
   - HTTP servers/clients: \`@effect/platform\`
+- Schema lives in \`effect/Schema\`; do not install \`@effect/schema\` (deprecated since Effect 3.10)
 - Run: \`[bun/pnpm/npm] add effect [...]\`
 - **Don't specify version** - use latest
 
