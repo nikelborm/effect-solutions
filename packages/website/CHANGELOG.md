@@ -1,5 +1,11 @@
 # @effect-best-practices/website
 
+## 0.4.17
+
+### Patch Changes
+
+- [`f1a32bf`](https://github.com/kitlangton/effect-solutions/commit/f1a32bfb4ed33e49e85e5dbc951e3c4bc91ba5d9) Thanks [@kitlangton](https://github.com/kitlangton)! - improve it.layer docs
+
 ## 0.4.16
 
 ### Patch Changes
