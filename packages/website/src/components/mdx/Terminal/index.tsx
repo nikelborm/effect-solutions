@@ -421,6 +421,7 @@ export function TerminalDemo() {
               onBlur={() => setIsFocused(false)}
               className="absolute inset-0 opacity-0 w-full cursor-text"
               autoComplete="off"
+              autoCapitalize="none"
               spellCheck={false}
               disabled={isRunning}
             />
